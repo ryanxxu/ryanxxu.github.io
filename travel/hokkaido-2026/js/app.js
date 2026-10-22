@@ -1,5 +1,5 @@
 /* 旅遊手冊主程式：讀取 window.TRIP（js/data.js）或解密 window.TRIP_ENC（js/data.enc.js）後渲染。
- * 路由（hash）：#/ 總覽　#/prep 行前準備　#/area/<id> 區域　#/day/<n> 單日 */
+ * 路由（hash）：#/ 總覽　#/prep 備註　#/area/<id> 區域　#/day/<n> 單日 */
 (function (root) {
   'use strict';
 
@@ -167,7 +167,7 @@
     return '<li>' + (k > 0 ? '<b>' + esc(t.slice(0, k)) + '</b><span>' + esc(t.slice(k + 1)) + '</span>' : '<span>' + esc(t) + '</span>') + '</li>';
   }
   function viewPrep(T, ctx) {
-    var ck = ctx.checks || {}, h = pageTop('prep', '行前準備', '勾選與收合狀態只存在這台裝置');
+    var ck = ctx.checks || {}, h = pageTop('prep', '備註', '勾選與收合狀態只存在這台裝置');
     var hs = (T.hotels || []).slice().sort(function (a, b) { return a.inn < b.inn ? -1 : 1; });
     h += fold(ctx, 'stay', 'Stay', hs.length ? hs.length + ' 間' : '',
       hs.length ? hs.map(function (x) { return hotelHtml(x, ''); }).join('') : '<div class="muted">尚未填寫住宿</div>');
@@ -285,8 +285,9 @@
   }
 
   function headerHtml(T, route) {
-    var tabs = [['#/', '總覽', route.k === 'home'], ['#/prep', '行前準備', route.k === 'prep']];
-    var curArea = route.k === 'area' ? route.id : route.k === 'day' ? (T.days[route.n - 1] || {}).area : null;
+    /* 【行程】：旅程期間到當天，否則 Day 1；在單日頁時亮【行程】，地區頁籤只在地區頁亮 */
+    var ti = todayIdx(T), tabs = [['#/', '總覽', route.k === 'home'], ['#/day/' + (ti >= 0 ? ti + 1 : 1), '行程', route.k === 'day'], ['#/prep', '備註', route.k === 'prep']];
+    var curArea = route.k === 'area' ? route.id : null;
     (T.areas || []).forEach(function (a) { tabs.push(['#/area/' + a.id, a.name, curArea === a.id]); });
     var last = ymd(addDays(T.start, T.days.length - 1));
     return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../">←</a> ' + esc(T.title) + '<span>' + T.start.slice(5).replace('-', '.') + ' – ' + last.slice(5).replace('-', '.') + (T.people && T.people.length ? '・' + T.people.length + '人' : '') + '</span></div>' +

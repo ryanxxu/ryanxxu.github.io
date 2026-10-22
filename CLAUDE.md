@@ -25,13 +25,13 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 - 舊的 `ryanxxu/hokkaido` repo 已不用（請使用者自行刪除；本環境無法刪 repo）。
 
 ## 行程頁（app.js）
-- 路由：`#/` 總覽、`#/prep`、`#/area/<id>`、`#/day/<n>`；左上「←」`href="../"` 回第二層。
+- 頁籤：總覽｜行程（旅程期間到當天，否則 Day 1；單日頁亮此頁籤）｜備註｜各地區。路由：`#/` 總覽、`#/prep`、`#/area/<id>`、`#/day/<n>`；左上「←」`href="../"` 回第二層。
 - 「今天」以目的地時區 `Asia/Tokyo` 判斷，旅程期間自動跳到當天。
 - 飯店顯示在入住日行程頁最底部（`inn <= date < out`，退房日不顯示）。
 - 天氣 Open-Meteo（不放預設文字）、日落/天黑用天文公式、匯率 JPY→TWD（open.er-api.com）、分帳、總覽區塊可折疊、卡片依類別加色條。
 - localStorage key 前綴 `trip:<pathname>:`（搬路徑會重置記住的密碼與分帳資料）。
 - 已移除頁內編輯功能，行程一律改 `data.js` 後重新加密。
-- 行前準備頁：英文段落標題（STAY → CHECKLIST → CAUTIONS → SHOP HOURS，使用者指定類別用英文），可折疊並記住狀態；`cautions` 項目可為字串或 `{a: 區域 id, t: "名稱：說明"}`，依區域分組、冒號前粗體。
+- 備註頁（原「行前準備」，路由仍是 `#/prep`）：英文段落標題（STAY → CHECKLIST → CAUTIONS → SHOP HOURS，使用者指定類別用英文），可折疊並記住狀態；`cautions` 項目可為字串或 `{a: 區域 id, t: "名稱：說明"}`，依區域分組、冒號前粗體。
 
 ## 隱私
 GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加密，瀏覽器 WebCrypto 解密，可選擇記住密碼。明文一旦 commit 進 git 歷史就無法收回。
