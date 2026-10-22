@@ -336,7 +336,14 @@
       var tryPass = function (p, remember) {
         decryptTrip(root.TRIP_ENC, p).then(function (t) { if (remember) ls('pass', p); start(t); }, function () { ls('pass', null); gate('密碼不正確'); });
       };
-      if (saved) tryPass(saved, true); else gate('');
+      /* 免密碼連結：網址 #k=<密碼> 自動解鎖，並立刻從網址列移除密碼 */
+      var mk = /^#k=(.+)$/.exec(location.hash), key = null;
+      if (mk) {
+        try { key = decodeURIComponent(mk[1]); } catch (e) { key = mk[1]; }
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+      }
+      if (key) decryptTrip(root.TRIP_ENC, key).then(function (t) { ls('pass', key); start(t); }, function () { gate('連結中的密碼不正確，請手動輸入'); });
+      else if (saved) tryPass(saved, true); else gate('');
     } else if (root.TRIP) start(root.TRIP);
     else app.innerHTML = '<div class="empty">找不到行程資料（js/data.js）</div>';
   }
