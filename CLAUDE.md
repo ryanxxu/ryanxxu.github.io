@@ -19,6 +19,8 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 2. 依使用者描述修改 data.js（欄位見 README）。
 3. `node tools/encrypt.mjs <同一組密碼>` → 確認 `git status` 沒有 data.js → commit + push main。
 4. 密碼不變，所以 `#k=` 免密碼分享連結繼續有效。
+
+**行程編輯器**（使用者自己改資料用）：私人 Artifact https://claude.ai/artifact/BAZaEjdYMgdaeyr9jgW19R ，資料在其 db `trip/current`（欄位 `json` = JSON.stringify(TRIP)、`savedAt`）。使用者說「改好了」→ ArtifactData get 該文件 → 寫成 data.js → 加密 → push。若自己改了 data.js，也要用 ArtifactData set（帶 if_version）同步回編輯器，否則下次儲存會蓋掉。
 - 新增旅程：放資料夾 + `travel/trips.js` 加一筆 + 入口頁 `TRAVEL` 陣列加一筆（兩處要同步）。
 - 舊的 `ryanxxu/hokkaido` repo 已不用（請使用者自行刪除；本環境無法刪 repo）。
 
