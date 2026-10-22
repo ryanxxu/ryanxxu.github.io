@@ -155,21 +155,48 @@
     return decoDots() + '<div class="pgtop s"></div><h1 class="ttl serif">' + title + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '');
   }
 
+  /* 可折疊段落：標題列 = 英文類別 + 數量；收合狀態記在這台裝置 */
+  function fold(ctx, key, title, meta, body) {
+    var shut = (ctx.fold || {})[key];
+    return '<details class="blk" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary class="sec2"><b>' + title + '</b>' +
+      (meta ? '<span>' + meta + '</span>' : '') + '<i aria-hidden="true"></i></summary>' + body + '</details>';
+  }
+  /* 注意事項可寫成字串（通用）或 {a: 區域 id, t: 文字} */
+  function cautionHtml(x) {
+    var t = typeof x === 'string' ? x : x.t, k = t.indexOf('：');
+    return '<li>' + (k > 0 ? '<b>' + esc(t.slice(0, k)) + '</b><span>' + esc(t.slice(k + 1)) + '</span>' : '<span>' + esc(t) + '</span>') + '</li>';
+  }
   function viewPrep(T, ctx) {
-    var ck = ctx.checks || {}, h = pageTop('prep', '行前準備', '勾選記錄只存在這台裝置');
-    h += '<div class="sec">Checklist<span>' + prepProgress(T, ck) + '</span></div>';
-    (T.prep || []).forEach(function (x, i) {
-      h += '<label class="ck' + (ck[i] ? ' done' : '') + '"><input type="checkbox" data-ck="' + i + '"' + (ck[i] ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
-    });
-    if (!(T.prep || []).length) h += '<div class="muted">尚無項目（在 data.js 的 prep 新增）</div>';
-    h += '<div class="sec">Stay</div>';
+    var ck = ctx.checks || {}, h = pageTop('prep', '行前準備', '勾選與收合狀態只存在這台裝置');
     var hs = (T.hotels || []).slice().sort(function (a, b) { return a.inn < b.inn ? -1 : 1; });
-    h += hs.length ? hs.map(function (x) { return hotelHtml(x, ''); }).join('') : '<div class="muted">尚未填寫（在 data.js 的 hotels 新增）</div>';
-    h += '<div class="sec">注意事項</div><ul class="ul">' + (T.cautions || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
-    if ((T.shops || []).length) {
-      h += '<div class="sec">購物地點營業時間</div>' + T.shops.map(function (s) {
-        return '<div class="shop"><div>' + esc(s[0]) + '<small>' + esc(s[1]) + (s[2] ? '・' + esc(s[2]) : '') + '</small></div><a href="' + mapUrl(s[0] + ' 札幌') + '" target="_blank" rel="noopener">Map ↗</a></div>';
+    h += fold(ctx, 'stay', 'Stay', hs.length ? hs.length + ' 間' : '',
+      hs.length ? hs.map(function (x) { return hotelHtml(x, ''); }).join('') : '<div class="muted">尚未填寫住宿</div>');
+
+    var list = T.prep || [], done = list.filter(function (x, i) { return ck[i]; }).length;
+    var cl = list.length ? '<div class="bar"><i style="width:' + Math.round(done / list.length * 100) + '%"></i></div><div class="ckg">' +
+      list.map(function (x, i) {
+        return '<label class="ck2' + (ck[i] ? ' done' : '') + '"><input type="checkbox" data-ck="' + i + '"' + (ck[i] ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
+      }).join('') + '</div>' : '<div class="muted">尚無項目</div>';
+    h += fold(ctx, 'check', 'Checklist', list.length ? done + ' / ' + list.length : '', cl);
+
+    var cs = T.cautions || [];
+    if (cs.length) {
+      var order = (T.areas || []).map(function (a) { return a.id; }).concat(['']), by = {};
+      cs.forEach(function (x) { var a = typeof x === 'string' ? '' : (x.a || ''); (by[a] = by[a] || []).push(x); });
+      var body = order.filter(function (a) { return by[a]; }).map(function (a) {
+        var ar = areaById(T, a);
+        return '<div class="cg"><div class="cgh"><span class="dot" style="background:' + (ar ? ar.color : GREY) + '"></span>' + esc(ar ? ar.name : '通用') +
+          '</div><ul class="cl">' + by[a].map(cautionHtml).join('') + '</ul></div>';
       }).join('');
+      h += fold(ctx, 'caution', 'Cautions', cs.length + ' 則', body);
+    }
+
+    if ((T.shops || []).length) {
+      h += fold(ctx, 'shops', 'Shop Hours', T.shops.length + ' 家', '<div class="sh">' + T.shops.map(function (s) {
+        return '<div class="shr"><div class="shn">' + esc(s[0]) + '</div><div class="sht">' + esc(s[1]) + '</div>' +
+          '<div class="shb">' + (s[2] ? '<em>' + esc(s[2]) + '</em>' : '') + '</div>' +
+          '<a href="' + mapUrl(s[0] + ' 札幌') + '" target="_blank" rel="noopener" aria-label="' + esc(s[0]) + ' 地圖">Map ↗</a></div>';
+      }).join('') + '</div>');
     }
     return h;
   }
@@ -318,7 +345,7 @@
   function ls(k, v) {
     try { if (v === undefined) { var r = localStorage.getItem(PFX + k); return r ? JSON.parse(r) : null; } localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { return null; }
   }
-  var ctx = { today: -1, wx: null, wxAt: 0, checks: {} };
+  var ctx = { today: -1, wx: null, wxAt: 0, checks: {}, fold: {} };
 
   function boot() {
     var app = document.getElementById('app');
@@ -350,7 +377,7 @@
 
   function start(t) {
     T = t; document.title = T.title;
-    ctx.today = todayIdx(T); ctx.checks = ls('checks') || {};
+    ctx.today = todayIdx(T); ctx.checks = ls('checks') || {}; ctx.fold = ls('fold') || {};
     var c = ls('wx'); if (c && c.sig === T.start + '|' + T.days.length) { ctx.wx = c.data; ctx.wxAt = c.at; }
     if (!location.hash && ctx.today >= 0) location.replace('#/day/' + (ctx.today + 1));
     root.addEventListener('hashchange', function () { render(true); });
@@ -484,6 +511,10 @@
       if (a === 'refresh') { b.style.opacity = .5; loadWx(true).then(function () { b.style.opacity = ''; render(false); }, function () { b.style.opacity = ''; }); }
       else if (a === 'fx') fxModal(); else if (a === 'split') splitModal();
     });
+    document.getElementById('app').addEventListener('toggle', function (e) {
+      var d = e.target; if (!d.getAttribute || !d.getAttribute('data-fold')) return;
+      ctx.fold[d.getAttribute('data-fold')] = !d.open; ls('fold', ctx.fold);
+    }, true);
     document.getElementById('app').addEventListener('change', function (e) {
       var c = e.target.closest('[data-ck]'); if (!c) return;
       ctx.checks[c.getAttribute('data-ck')] = c.checked; ls('checks', ctx.checks); render(false);
