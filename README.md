@@ -8,7 +8,8 @@ travel/index.html + trips.js     第 2 層：旅遊列表（新增旅程在 trip
 travel/hokkaido-2026/            第 3 層：單趟行程手冊
   index.html  css/style.css  js/app.js（程式，不用改）
   js/data.js                     ← 行程資料，唯一需要維護的檔案
-tools/encrypt.mjs                資料加密工具（選用，建議）
+tools/encrypt.mjs                資料加密工具
+tools/decrypt.mjs                從 data.enc.js 還原 data.js（手邊沒有 data.js 時用）
 ```
 
 ## 維護行程

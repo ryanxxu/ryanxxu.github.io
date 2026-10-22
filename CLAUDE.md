@@ -11,9 +11,16 @@ travel/hokkaido-2026/              第 3 層：行程頁（2026-11-19 ~ 11-23，
   js/data.js       明文行程 window.TRIP —— .gitignore 排除，絕不上傳
   js/data.enc.js   加密資料 window.TRIP_ENC —— 上傳這個
 tools/encrypt.mjs                  node tools/encrypt.mjs <密碼≥8字> [folder]
+tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（從 data.enc.js 還原 data.js）
 ```
+
+## 更新行程的流程（新 session 沒有 data.js）
+1. 向使用者要密碼（密碼絕不寫進 repo）→ `node tools/decrypt.mjs <密碼>` 還原 data.js。
+2. 依使用者描述修改 data.js（欄位見 README）。
+3. `node tools/encrypt.mjs <同一組密碼>` → 確認 `git status` 沒有 data.js → commit + push main。
+4. 密碼不變，所以 `#k=` 免密碼分享連結繼續有效。
 - 新增旅程：放資料夾 + `travel/trips.js` 加一筆 + 入口頁 `TRAVEL` 陣列加一筆（兩處要同步）。
-- 另有 `ryanxxu/hokkaido` repo（`/hokkaido/`），內容是舊的單檔 artifact 版，已被 `travel/hokkaido-2026/` 取代。
+- 舊的 `ryanxxu/hokkaido` repo 已不用（請使用者自行刪除；本環境無法刪 repo）。
 
 ## 行程頁（app.js）
 - 路由：`#/` 總覽、`#/prep`、`#/area/<id>`、`#/day/<n>`；左上「←」`href="../"` 回第二層。
@@ -34,9 +41,7 @@ GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加�
 - 視覺要和朋友網站 troyyan.com 不同。
 
 ## 待辦
-- [ ] 部署：加密 → 上傳（不含 data.js）→ Settings→Pages 選 main / root。
-- [ ] 部署後實測整條流程（入口→清單→行程→密碼→天氣/日落/匯率/分帳）；之前從未在瀏覽器實測過。
+- [x] 已部署並實測（天氣、匯率正常）；已加免密碼分享連結 `#k=<密碼>`。
 - [ ] 範例飯店「札幌○○飯店」改成真實資料；填 `people`。
-- [ ] `pending` 的 `day` 欄位疑似少 1（Day2 小樽、Day3 美瑛、Day4 定山溪）。
 - [ ] 待確認事項與備選清單待使用者逐項確認。
 - [ ] `tzOffsetHours` 只認得少數時區，非亞洲旅程需改用 Intl 計算。
