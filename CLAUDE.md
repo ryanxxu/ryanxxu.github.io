@@ -31,6 +31,7 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 - 天氣 Open-Meteo（不放預設文字）、日落/天黑用天文公式、匯率 JPY→TWD（open.er-api.com）、分帳、總覽區塊可折疊、卡片依類別加色條。
 - localStorage key 前綴 `trip:<pathname>:`（搬路徑會重置記住的密碼與分帳資料）。
 - 已移除頁內編輯功能，行程一律改 `data.js` 後重新加密。
+- 行前準備頁：英文段落標題（STAY → CHECKLIST → CAUTIONS → SHOP HOURS，使用者指定類別用英文），可折疊並記住狀態；`cautions` 項目可為字串或 `{a: 區域 id, t: "名稱：說明"}`，依區域分組、冒號前粗體。
 
 ## 隱私
 GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加密，瀏覽器 WebCrypto 解密，可選擇記住密碼。明文一旦 commit 進 git 歷史就無法收回。
