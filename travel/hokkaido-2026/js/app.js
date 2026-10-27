@@ -215,10 +215,9 @@
   function hotelHtml(x, tag) {
     var q = x.addr || x.name;
     return '<div class="mini"><div class="a"><small>' + nightsOf(x) + ' NIGHTS</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
-      '<div class="b"><b>' + esc(x.name) + '</b>' + (tag ? '<span class="tg">' + tag + '</span>' : '') +
+      '<div class="b"><b>' + titleWithMap(x.name, q) + '</b>' + (tag ? '<span class="tg">' + tag + '</span>' : '') +
       (x.addr ? '<div>' + esc(x.addr) + '</div>' : '') + (x.conf ? '<div>訂房編號　' + esc(x.conf) + '</div>' : '') +
-      (x.phone ? '<div>' + esc(x.phone) + '</div>' : '') + (x.cost ? '<div>' + esc(x.cost) + '</div>' : '') + (x.note ? '<div>' + esc(x.note) + '</div>' : '') +
-      '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div></div></div>';
+      (x.phone ? '<div>' + esc(x.phone) + '</div>' : '') + (x.cost ? '<div>' + esc(x.cost) + '</div>' : '') + (x.note ? '<div>' + esc(x.note) + '</div>' : '') + '</div></div>';
   }
   function stayHtml(T, ctx) {
     var hs = (T.hotels || []).slice().sort(function (a, b) { return a.inn < b.inn ? -1 : 1; }), t = nowIn(T.tz).date;
@@ -232,8 +231,7 @@
     var n = 0, body = ['t', 'p', 'f', 'b'].map(function (k) {
       var arr = pa[k]; if (!arr || !arr.length) return ''; n += arr.length;
       return '<div class="pk"><div class="pkc">' + POOLCAT[k] + '</div>' + arr.map(function (e) {
-        return '<div class="pki"><div><b>' + esc(e[0]) + '</b>' + (e[1] ? '<span>' + esc(e[1]) + '</span>' : '') + '</div>' +
-          (k === 't' ? '' : '<a target="_blank" rel="noopener" href="' + mapUrl(e[0] + ' ' + a.pool) + '">Map ↗</a>') + '</div>';
+        return '<div class="pki"><div><b>' + (k === 't' ? esc(e[0]) : titleWithMap(e[0], e[0] + ' ' + a.pool)) + '</b>' + (e[1] ? '<span>' + esc(e[1]) + '</span>' : '') + '</div></div>';
       }).join('') + '</div>';
     }).join('');
     if (!n) return '';
@@ -250,9 +248,8 @@
 
     if ((T.shops || []).length) {
       h += fold(ctx, 'shops', 'Shop Hours', T.shops.length + ' 家', '<div class="sh">' + T.shops.map(function (s) {
-        return '<div class="shr"><div class="shn">' + esc(s[0]) + '</div><div class="sht">' + esc(s[1]) + '</div>' +
-          '<div class="shb">' + (s[2] ? '<em>' + esc(s[2]) + '</em>' : '') + '</div>' +
-          '<a href="' + mapUrl(s[0] + ' 札幌') + '" target="_blank" rel="noopener" aria-label="' + esc(s[0]) + ' 地圖">Map ↗</a></div>';
+        return '<div class="shr"><div class="shn">' + titleWithMap(s[0], s[0] + ' 札幌') + '</div><div class="sht">' + esc(s[1]) + '</div>' +
+          '<div class="shb">' + (s[2] ? '<em>' + esc(s[2]) + '</em>' : '') + '</div></div>';
       }).join('') + '</div>');
     }
 

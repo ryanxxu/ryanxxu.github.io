@@ -39,7 +39,7 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加密，瀏覽器 WebCrypto 解密，可選擇記住密碼。明文一旦 commit 進 git 歷史就無法收回。
 
 ## 設計
-- 行程頁：總覽「票券風 + 山稜 SVG」，內頁「極簡雜誌風 + 雪點」。配色 snow #f7f9fb、navy #17304f、ice #6fa8d6、berry #b84a62（候選/待確認）、餐飲橘 #d9772b。大標題粗體；時間軸的地圖連結是名稱後面的線條地圖圖釘（SVG，使用者選的 B 款）（飯店卡片仍用 `Map ↗`）；不顯示 Photos。
+- 行程頁：總覽「票券風 + 山稜 SVG」，內頁「極簡雜誌風 + 雪點」。配色 snow #f7f9fb、navy #17304f、ice #6fa8d6、berry #b84a62（候選/待確認）、餐飲橘 #d9772b。大標題粗體；所有地圖連結（時間軸、飯店、營業時間、Wishlist）都是名稱後面的線條地圖圖釘（SVG `PIN`，使用者選的 B 款，`titleWithMap()`）；不顯示 Photos。
 - 入口頁／第二層：鼠尾草綠（--bg #f4f4f1、--sage #dfe9df、--ink #1d2b22）。Hero：三層同心圓環（::before）+ ✳（::after，旋轉 -15°）；第二層 hero 與第一層同尺寸（min-height 300）。
 - 兩層都加 `html{scrollbar-gutter:stable}`。
 - 北海道圖示是使用者自己做的內嵌 SVG 日本國旗（trips.js 的 `JP` 變數、入口頁 TRAVEL 陣列）。
