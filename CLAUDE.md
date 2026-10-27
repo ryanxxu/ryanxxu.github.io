@@ -24,14 +24,16 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 - 新增旅程：放資料夾 + `travel/trips.js` 加一筆 + 入口頁 `TRAVEL` 陣列加一筆（兩處要同步）。
 - 舊的 `ryanxxu/hokkaido` repo 已不用（請使用者自行刪除；本環境無法刪 repo）。
 
-## 行程頁（app.js）
-- 頁籤：總覽｜行程（旅程期間到當天，否則 Day 1；單日頁亮此頁籤）｜備註｜各地區。路由：`#/` 總覽、`#/prep`、`#/area/<id>`、`#/day/<n>`；左上「←」`href="../"` 回第二層。
-- 「今天」以目的地時區 `Asia/Tokyo` 判斷，旅程期間自動跳到當天。
-- 飯店顯示在入住日行程頁最底部（`inn <= date < out`，退房日不顯示）。
-- 天氣 Open-Meteo（不放預設文字）、日落/天黑用天文公式、匯率 JPY→TWD（open.er-api.com）、分帳、總覽區塊可折疊、卡片依類別加色條。
-- localStorage key 前綴 `trip:<pathname>:`（搬路徑會重置記住的密碼與分帳資料）。
-- 已移除頁內編輯功能，行程一律改 `data.js` 後重新加密。
-- 備註頁（原「行前準備」，路由仍是 `#/prep`）：英文段落標題（STAY → CHECKLIST → CAUTIONS → SHOP HOURS，使用者指定類別用英文），可折疊並記住狀態；`cautions` 項目可為字串或 `{a: 區域 id, t: "名稱：說明"}`，依區域分組、冒號前粗體。
+## 行程頁（app.js）— 一頁式
+- 上方固定英文選單 HOME｜FLIGHT｜DAYS｜STAY｜NOTES，點了捲到該段，捲動時自動標示（scrollspy）。右上只留「匯率」「分帳」；天氣自動抓、30 分鐘快取，回到頁面時過期就重抓（沒有更新按鈕）。
+- HOME：標題、時鐘、倒數、待確認。FLIGHT：`TRIP.flights[]`（dir、date、airline、no、from、to、dep、arr、pnr、cost、note）登機證卡片，並自動排進當天時間軸（不要再在 days.items 放航班）。
+- DAYS：D1–D5 切換（旅程期間預設當天，否則 Day 1）；最上面 NOTE 框 = 當天待確認＋`reminders`（「名稱：說明」名稱加粗）＋`notes`（備案）；下面是直式時間軸（類別色圓點、交通空心點、航班 ✈、候選紅圈、日落金點、旅程中的紅色 NOW 線）。
+- STAY：飯店卡片（`inn <= date < out`）；每日行程底部顯示「今晚住宿」連到 STAY。
+- NOTES：CHECKLIST（`prep`）、SHOP HOURS（`shops`）、WISHLIST（`pool`，依地區，預設收起）。可折疊並記住狀態。舊的 CAUTIONS 已併入各天 `reminders`，資料不再有 `cautions`。
+- 舊網址相容：`#/day/<n>` 切到該天並捲到 DAYS、`#/prep` 捲到 NOTES、`#/area/<id>` 切到該區第一天。
+- 字級：內文 17px（iPhone 16 Pro），最小 12px；類別字 14px。使用者偏好段落／選單用英文。
+- 「今天」以目的地時區 `Asia/Tokyo` 判斷。localStorage key 前綴 `trip:<pathname>:`。已移除頁內編輯功能。
+- 改版前先做在草稿分支並截圖（iPhone 16 Pro 402×874），使用者確認後再併入 main。
 
 ## 隱私
 GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加密，瀏覽器 WebCrypto 解密，可選擇記住密碼。明文一旦 commit 進 git 歷史就無法收回。
