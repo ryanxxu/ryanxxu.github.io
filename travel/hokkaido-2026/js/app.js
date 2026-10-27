@@ -56,7 +56,9 @@
   function dayDate(T, i) { return addDays(T.start, i); }
   function areaOf(T, i) { var d = T.days[i]; return d ? (T.areas || []).filter(function (a) { return a.id === d.area; })[0] : null; }
   function areaById(T, id) { return (T.areas || []).filter(function (a) { return a.id === id; })[0]; }
-  function dayColor(T, i) { var a = areaOf(T, i); return a ? a.color : GREY; }
+  var TONES = ['#17304f', '#4a7aa6', '#8fb6d9', '#6b7f95', '#a9b8c8'];
+  function areaTone(T, a) { var k = a ? (T.areas || []).indexOf(a) : -1; return k < 0 ? GREY : TONES[k % TONES.length]; }
+  function dayColor(T, i) { return areaTone(T, areaOf(T, i)); }
   function sorted(items) { return items.slice().sort(function (a, b) { return (a.time || '') < (b.time || '') ? -1 : (a.time || '') > (b.time || '') ? 1 : 0; }); }
   function todayIdx(T) {
     var t = nowIn(T.tz).date;
@@ -80,6 +82,15 @@
   }
   function wxLabel(src) { return src === 'f' ? '即時預報' : src === 'h' ? '去年同日參考' : '實際天氣'; }
   /* ---------- view builders（純函式，回傳 HTML 字串） ---------- */
+  function rnd(i) { var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  function decoSnow(seed) {
+    var o = '';
+    for (var i = 0; i < 34; i++) {
+      var k = i + seed * 41, r = 1 + rnd(k + 9) * 2.6;
+      o += '<circle cx="' + (rnd(k + 1) * 390).toFixed(1) + '" cy="' + (rnd(k + 77) * 120).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#9cc3e6" opacity="' + (0.18 + rnd(k + 5) * 0.32).toFixed(2) + '"/>';
+    }
+    return '<svg class="snow" viewBox="0 0 390 120" preserveAspectRatio="xMidYMin slice" aria-hidden="true">' + o + '</svg>';
+  }
   function decoRidge() {
     return '<svg class="deco" viewBox="0 0 390 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3f5"/><stop offset="1" stop-color="#f7f9fb"/></linearGradient></defs>' +
       '<path d="M0 110 L55 62 L88 88 L140 28 L190 84 L232 52 L290 100 L335 44 L390 96 L390 150 L0 150Z" fill="url(#rg)"/>' +
@@ -127,7 +138,7 @@
     var now = nowIn(T.tz).time, toMin = function (t) { var p = t.split(':'); return +p[0] * 60 + +p[1]; };
     var card = function (lbl, d, k, x, when) {
       return '<button class="nxc" data-jump="' + d + ':' + k + '"><span class="nxl">' + lbl + '</span><span class="nxt">' + esc(x.time || '全天') + '</span>' +
-        '<b class="serif">' + esc(x.title) + '</b>' + (when ? '<small>' + when + '</small>' : '') + '<i aria-hidden="true">→</i></button>';
+        '<b>' + esc(x.title) + '</b>' + (when ? '<small>' + when + '</small>' : '') + '<i aria-hidden="true">→</i></button>';
     };
     var items = dayItems(T, ctx.today), cur = -1, nx = -1;
     items.forEach(function (x, k) {
@@ -189,14 +200,14 @@
     var d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';
     var dt = dayDate(T, i), a = areaOf(T, i), ds = ymd(dt), isToday = ctx.today === i;
     var s = sunInfo(T, i), w = ctx.wx && ctx.wx[i];
-    /* 標題：大日期數字的底線和標題底線對齊；月份、Day、星期放在標題上方一行 */
-    var h = '<div class="dh"><div class="big serif">' + pad(dt.getDate()) + '</div>' +
+    /* 標題：大日期數字的底線和標題底線對齊；月份、Day、星期放在標題上方一行；背景淡淡雪點 */
+    var h = decoSnow(i) + '<div class="dh"><div class="big serif">' + pad(dt.getDate()) + '</div>' +
       '<div class="dhr"><div class="dmeta"><span class="mon">' + MON[dt.getMonth()] + '</span>' + wd(dt).replace('星期', '週') + '　Day ' + (i + 1) + ' / ' + T.days.length +
       (isToday ? '<em>TODAY</em>' : '') + '</div>' +
       '<h2 class="ttl serif sm">' + esc(d.title || (a && a.name) || '') + '</h2></div></div>';
     /* 天氣方塊：地區、天氣、溫度、降雨／降雪、日出日落 */
     h += '<div class="wxb"><div class="wxm">' +
-      '<div class="area" style="--c:' + tint(a && a.color) + '"><span class="dot" style="background:' + tint(a && a.color) + '"></span>' + esc(a ? a.name : '') + '</div>' +
+      '<div class="area"><span class="dot" style="background:' + areaTone(T, a) + '"></span>' + esc(a ? a.name : '') + '</div>' +
       (w ? '<div class="wxt"><span class="wxi">' + wmo(w.code) + '</span><b>' + Math.round(w.lo) + '° / ' + Math.round(w.hi) + '°</b></div>' +
         '<div class="wxs">' + [w.pp != null ? '降雨 ' + w.pp + '%' : '', w.sn > 0 ? '降雪 ' + (Math.round(w.sn * 10) / 10) + ' cm' : ''].filter(Boolean).join('　') + '<small>' + wxLabel(w.src) + '</small></div>'
         : '<div class="wxs">天氣資料讀取中</div>') + '</div>' +
@@ -226,7 +237,7 @@
       return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" data-k="' + r.k + '">' +
         '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
         (x.status === 'candidate' && !mv ? '<div class="tag"><span class="cand">候選方案</span></div>' : '') +
-        '<div class="tt serif">' + (q && !x.fl ? titleWithMap(x.title, q) : esc(x.title)) + '</div>' +
+        '<div class="tt">' + (q && !x.fl ? titleWithMap(x.title, q) : esc(x.title)) + '</div>' +
         (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
         (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : '') + '</div></div>';
     }).join('') + '</div>';
@@ -371,7 +382,11 @@
     if (!root.TRIP && root.TRIP_ENC) {
       var saved = ls('pass');
       var gate = function (msg) {
-        app.innerHTML = '<div class="gate"><h2>🔒 旅遊手冊</h2><p class="muted">資料已加密，請輸入密碼</p><input type="password" id="pw" autocomplete="current-password" placeholder="密碼"><label class="muted"><input type="checkbox" id="rm" checked> 記住這台裝置</label><div class="err" id="er">' + esc(msg || '') + '</div><button class="btn pri" id="go">解鎖</button></div>';
+        app.innerHTML = '<div class="gate">' + decoRidge() + '<div class="gin"><div class="gey">Private Trip</div><h1 class="ttl serif">' + esc(document.title) + '</h1>' +
+          '<p class="gsub">這份行程只開放給同行的朋友，請輸入密碼查看。</p>' +
+          '<label class="gl" for="pw">密碼</label><input type="password" id="pw" autocomplete="current-password" placeholder="輸入密碼">' +
+          '<label class="grm"><input type="checkbox" id="rm" checked> 記住這台裝置，下次不用再輸入</label><div class="err" id="er">' + esc(msg || '') + '</div>' +
+          '<button class="btn pri" id="go">解鎖</button><p class="ghint">有收到分享連結的話，直接點連結就能開啟。</p></div></div>';
         var go = function () {
           var p = document.getElementById('pw').value; if (!p) return;
           tryPass(p, document.getElementById('rm').checked);
