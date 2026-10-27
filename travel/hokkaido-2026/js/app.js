@@ -153,10 +153,11 @@
     });
     return sorted((T.days[i].items || []).concat(fl));
   }
-  /* 名稱後面接地圖 ↗；最後一個字和 ↗ 不分開換行 */
+  /* 名稱後面接線條地圖圖釘；最後一個字和圖釘不分開換行 */
+  var PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   function titleWithMap(t, q) {
     var c = Array.from(String(t)), last = c.pop() || '';
-    return esc(c.join('')) + '<span class="nw">' + esc(last) + '<a class="mp" target="_blank" rel="noopener" href="' + mapUrl(q) + '" aria-label="' + esc(t) + ' 地圖">↗</a></span>';
+    return esc(c.join('')) + '<span class="nw">' + esc(last) + '<a class="mp" target="_blank" rel="noopener" href="' + mapUrl(q) + '" aria-label="' + esc(t) + ' 地圖">' + PIN + '</a></span>';
   }
   function dayPanel(T, i, ctx) {
     var d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';

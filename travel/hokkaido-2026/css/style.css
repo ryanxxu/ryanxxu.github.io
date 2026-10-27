@@ -108,7 +108,8 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .it .tt{font-size:19px;line-height:1.35}
 .it .ds{font-size:14px;color:var(--mut);margin-top:3px;white-space:pre-wrap}
 .mp{display:inline-block;margin-left:6px;padding:0 4px;color:var(--link);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:600;vertical-align:1px}
-.it.mv .mp{font-size:14px}
+.mp svg{width:17px;height:17px;vertical-align:-2px}
+.it.mv .mp svg{width:14px;height:14px}
 .nw{white-space:nowrap}
 .lks{display:flex;gap:14px;margin-top:5px;font-size:14px}
 .lks a{color:var(--link);text-decoration:none;letter-spacing:.03em}
