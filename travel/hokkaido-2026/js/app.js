@@ -173,26 +173,32 @@
     if (p.length || rm.length || nt.length) {
       h += '<div class="note"><div class="nh">Note</div>' +
         p.map(function (x) { return '<div class="nl pdl"><b>待確認</b>' + esc(x.title) + '</div>'; }).join('') +
-        rm.map(function (x) { return '<div class="nl">' + esc(x) + '</div>'; }).join('') +
+        rm.map(function (x) { var k = x.indexOf('：'); return '<div class="nl">' + (k > 0 ? '<b>' + esc(x.slice(0, k)) + '</b>' + esc(x.slice(k + 1)) : esc(x)) + '</div>'; }).join('') +
         (nt.length ? '<div class="nl alt"><b>備案</b>' + nt.map(esc).join('、') + '</div>' : '') + '</div>';
     }
 
-    var items = dayItems(T, i), nowT = nowIn(T.tz).time, nowId = -1, sunDone = false, cats = {}, hasCand = false;
+    var items = dayItems(T, i), nowT = nowIn(T.tz).time, cats = {}, hasCand = false, rows = [];
     items.forEach(function (x) { if (x.cat !== 'move') cats[x.cat || 'other'] = 1; if (x.status === 'candidate' && x.cat !== 'move') hasCand = true; });
-    if (isToday) items.forEach(function (x, k) { if (x.time && x.time <= nowT && (!x.end || nowT < x.end)) nowId = k; });
     var legend = Object.keys(cats).map(function (k) { var c = CAT[k] || CAT.other; return '<span style="--k:' + c.c + '"><i></i>' + c.n + '</span>'; }).join('') + (hasCand ? '<span class="lc">◯ 候選／待確認</span>' : '');
     if (legend) h += '<div class="leg">' + legend + '</div>';
-    items.forEach(function (x, k) {
-      if (s && !sunDone && x.time && x.time > s.set) { h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>'; sunDone = true; }
-      var c = CAT[x.cat] || CAT.other, mv = x.cat === 'move' && !x.fl, q = x.place;
+    /* 依時間排進軸線：行程、日落、現在（只在當天） */
+    items.forEach(function (x) { rows.push({ t: x.time || '', x: x }); });
+    if (s && items.length) rows.push({ t: s.set, sun: 1 });
+    if (isToday && items.length) rows.push({ t: nowT, now: 1 });
+    rows.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : (a.now ? 1 : b.now ? -1 : 0); });
+    h += '<div class="tl">' + rows.map(function (r) {
+      if (r.sun) return '<div class="it sun"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">日落' + (s.dark ? '・天色全暗約 ' + s.dark : '') + '</div></div>';
+      if (r.now) return '<div class="it nowl"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">NOW</div></div>';
+      var x = r.x, c = CAT[x.cat] || CAT.other, mv = x.cat === 'move' && !x.fl, q = x.place;
+      var on = isToday && x.time && x.time <= nowT && x.end && nowT < x.end;
       var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
-      h += '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (k === nowId ? ' now' : '') + '" style="--k:' + c.c + '"><div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div>' +
+      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" style="--k:' + c.c + '">' +
+        '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
         (mv || x.fl ? '' : '<div class="tag">' + c.n + (x.status === 'candidate' ? '<span class="cand">候選方案</span>' : '') + '</div>') +
         '<div class="tt serif">' + esc(x.title) + '</div>' +
         (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
         (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : q ? '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>' : '') + '</div></div>';
-    });
-    if (s && !sunDone && items.length) h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>';
+    }).join('') + '</div>';
     if (!items.length) h += '<div class="empty">這天還沒有行程</div>';
 
     var hs = hotelsFor(T, ds);
@@ -221,10 +227,6 @@
   }
 
   /* ---------- NOTES ---------- */
-  function cautionHtml(x) {
-    var t = typeof x === 'string' ? x : x.t, k = t.indexOf('：');
-    return '<li>' + (k > 0 ? '<b>' + esc(t.slice(0, k)) + '</b><span>' + esc(t.slice(k + 1)) + '</span>' : '<span>' + esc(t) + '</span>') + '</li>';
-  }
   function areaHead(ar) {
     return '<div class="cgh"><span class="dot" style="background:' + (ar ? ar.color : GREY) + '"></span>' + esc(ar ? ar.name : '通用') + '</div>';
   }
@@ -235,15 +237,6 @@
       '<div class="bar"><i style="width:' + Math.round(done / list.length * 100) + '%"></i></div><div class="ckg">' + list.map(function (x, i) {
         return '<label class="ck2' + (ck[i] ? ' done' : '') + '"><input type="checkbox" data-ck="' + i + '"' + (ck[i] ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
       }).join('') + '</div>' : '<div class="muted">尚無項目</div>');
-
-    var cs = T.cautions || [], order = (T.areas || []).map(function (a) { return a.id; }).concat(['']);
-    if (cs.length) {
-      var by = {};
-      cs.forEach(function (x) { var a = typeof x === 'string' ? '' : (x.a || ''); (by[a] = by[a] || []).push(x); });
-      h += fold(ctx, 'caution', 'Cautions', cs.length + ' 則', order.filter(function (a) { return by[a]; }).map(function (a) {
-        return '<div class="cg">' + areaHead(areaById(T, a)) + '<ul class="cl">' + by[a].map(cautionHtml).join('') + '</ul></div>';
-      }).join(''));
-    }
 
     if ((T.shops || []).length) {
       h += fold(ctx, 'shops', 'Shop Hours', T.shops.length + ' 家', '<div class="sh">' + T.shops.map(function (s) {
@@ -382,7 +375,7 @@
     bind(); render(true); go(location.hash || (ctx.today >= 0 ? '#/day/' + (ctx.today + 1) : ''));
     root.addEventListener('hashchange', function () { go(location.hash); });
     root.addEventListener('scroll', spy, { passive: true });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { ctx.today = todayIdx(T); render(false); } });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { ctx.today = todayIdx(T); render(false); loadWx(false); } });
     setInterval(tickClock, 20000);
     loadWx(false);
   }
