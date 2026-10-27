@@ -118,8 +118,33 @@
     h += '<div class="clk" id="clk">' + clockHtml(T) + '</div>';
     if (diff > 0) h += '<div class="cd">距離出發還有 <b>' + diff + '</b> 天</div>';
     else if (ctx.today >= 0) h += '<div class="cd">旅程第 <b>' + (ctx.today + 1) + '</b> 天　<button class="lnk" data-day="' + ctx.today + '">看今天的行程 →</button></div>';
+    if (ctx.today >= 0) h += '<div id="nx">' + nextHtml(T, ctx) + '</div>';
     if ((T.pending || []).length) h += '<div class="sec">待確認事項 ・ ' + T.pending.length + '</div>' + pendingBox(T);
     return h;
+  }
+  /* 旅程中：首頁顯示「進行中／接下來」，點了跳到時間軸上那一列 */
+  function nextHtml(T, ctx) {
+    var now = nowIn(T.tz).time, toMin = function (t) { var p = t.split(':'); return +p[0] * 60 + +p[1]; };
+    var card = function (lbl, d, k, x, when) {
+      return '<button class="nxc" data-jump="' + d + ':' + k + '"><span class="nxl">' + lbl + '</span><span class="nxt">' + esc(x.time || '全天') + '</span>' +
+        '<b class="serif">' + esc(x.title) + '</b>' + (when ? '<small>' + when + '</small>' : '') + '<i aria-hidden="true">→</i></button>';
+    };
+    var items = dayItems(T, ctx.today), cur = -1, nx = -1;
+    items.forEach(function (x, k) {
+      if (!x.time) return;
+      if (x.time <= now && x.end && now < x.end) cur = k;
+      if (nx < 0 && x.time > now) nx = k;
+    });
+    var h = '';
+    if (cur >= 0) h += card('進行中', ctx.today, cur, items[cur], '');
+    if (nx >= 0) {
+      var m = toMin(items[nx].time) - toMin(now);
+      h += card('接下來', ctx.today, nx, items[nx], m < 60 ? m + ' 分鐘後' : Math.floor(m / 60) + ' 小時 ' + (m % 60 ? m % 60 + ' 分' : '') + '後');
+    } else if (T.days[ctx.today + 1]) {
+      var tm = dayItems(T, ctx.today + 1)[0];
+      if (tm) h += card('明天', ctx.today + 1, 0, tm, '今天的行程都結束了');
+    }
+    return h ? '<div class="nx">' + h + '</div>' : '';
   }
 
   /* ---------- FLIGHT ---------- */
@@ -149,7 +174,8 @@
   /* 航班自動排進當天時間軸 */
   function dayItems(T, i) {
     var ds = ymd(dayDate(T, i)), fl = (T.flights || []).filter(function (f) { return f.date === ds; }).map(function (f) {
-      return { time: f.dep, end: f.arr, cat: 'move', fl: 1, title: '✈ ' + flightTitle(f) + '　' + (f.from || '') + ' → ' + (f.to || '') };
+      var ap = function (x) { return String(x || '').replace(/\s*(國際)?機場.*$/, ''); };
+      return { time: f.dep, end: f.arr, cat: 'move', fl: 1, title: (f.no || flightTitle(f)) + '　' + ap(f.from) + ' → ' + ap(f.to) };
     });
     return sorted((T.days[i].items || []).concat(fl));
   }
@@ -181,7 +207,7 @@
 
     var items = dayItems(T, i), nowT = nowIn(T.tz).time, rows = [];
     /* 依時間排進軸線：行程、日落、現在（只在當天） */
-    items.forEach(function (x) { rows.push({ t: x.time || '', x: x }); });
+    items.forEach(function (x, k) { rows.push({ t: x.time || '', x: x, k: k }); });
     if (s && items.length) rows.push({ t: s.set, sun: 1 });
     if (isToday && items.length) rows.push({ t: nowT, now: 1 });
     rows.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : (a.now ? 1 : b.now ? -1 : 0); });
@@ -191,7 +217,7 @@
       var x = r.x, mv = x.cat === 'move' && !x.fl, q = x.place;
       var on = isToday && x.time && x.time <= nowT && x.end && nowT < x.end;
       var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
-      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '">' +
+      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" data-k="' + r.k + '">' +
         '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
         (x.status === 'candidate' && !mv ? '<div class="tag"><span class="cand">候選方案</span></div>' : '') +
         '<div class="tt serif">' + (q && !x.fl ? titleWithMap(x.title, q) : esc(x.title)) + '</div>' +
@@ -413,6 +439,14 @@
   function tickClock() {
     var h = document.querySelector('[data-clk=home]'), d = document.querySelector('[data-clk=dest]');
     if (h) h.textContent = nowIn(T.homeTz || 'Asia/Taipei').time; if (d) d.textContent = nowIn(T.tz).time;
+    var n = document.getElementById('nx'); if (n && ctx.today >= 0) n.innerHTML = nextHtml(T, ctx);
+  }
+  /* 跳到某天時間軸上的某一列，並短暫標示 */
+  function jumpTo(d, k) {
+    pickDay(d);
+    var el = document.querySelector('#dayp .it[data-k="' + k + '"]'); if (!el) { scrollToSec('days'); return; }
+    root.scrollTo({ top: el.getBoundingClientRect().top + root.scrollY - hdH() - 16, behavior: 'smooth' });
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   }
 
   /* 天氣：16 天內用預報；更遠用「去年同日」；已過去用實際資料。需要網路，失敗就不顯示。 */
@@ -522,10 +556,11 @@
     });
     document.addEventListener('click', function (e) {
       if (e.target.closest('#mask')) return;
-      var b = e.target.closest('[data-act],[data-go],[data-day]'); if (!b) return;
+      var b = e.target.closest('[data-act],[data-go],[data-day],[data-jump]'); if (!b) return;
       var a = b.getAttribute('data-act');
       if (a === 'fx') fxModal(); else if (a === 'split') splitModal();
       else if (b.hasAttribute('data-go')) scrollToSec(b.getAttribute('data-go'));
+      else if (b.hasAttribute('data-jump')) { var j = b.getAttribute('data-jump').split(':'); jumpTo(+j[0], +j[1]); }
       else if (b.hasAttribute('data-day')) {
         var inPanel = b.closest('#s-days');
         pickDay(+b.getAttribute('data-day'));
