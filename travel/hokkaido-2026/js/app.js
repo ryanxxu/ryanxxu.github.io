@@ -153,6 +153,11 @@
     });
     return sorted((T.days[i].items || []).concat(fl));
   }
+  /* 名稱後面接地圖 ↗；最後一個字和 ↗ 不分開換行 */
+  function titleWithMap(t, q) {
+    var c = Array.from(String(t)), last = c.pop() || '';
+    return esc(c.join('')) + '<span class="nw">' + esc(last) + '<a class="mp" target="_blank" rel="noopener" href="' + mapUrl(q) + '" aria-label="' + esc(t) + ' 地圖">↗</a></span>';
+  }
   function dayPanel(T, i, ctx) {
     var d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';
     var dt = dayDate(T, i), a = areaOf(T, i), ds = ymd(dt), isToday = ctx.today === i;
@@ -188,9 +193,9 @@
       return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '">' +
         '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
         (x.status === 'candidate' && !mv ? '<div class="tag"><span class="cand">候選方案</span></div>' : '') +
-        '<div class="tt serif">' + esc(x.title) + '</div>' +
+        '<div class="tt serif">' + (q && !x.fl ? titleWithMap(x.title, q) : esc(x.title)) + '</div>' +
         (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
-        (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : q ? '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>' : '') + '</div></div>';
+        (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : '') + '</div></div>';
     }).join('') + '</div>';
     if (!items.length) h += '<div class="empty">這天還沒有行程</div>';
 
