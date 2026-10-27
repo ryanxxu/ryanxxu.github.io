@@ -63,7 +63,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .bp-m i{width:18px;border-top:1.5px dashed var(--ice)}
 .bp-f{border-top:1.5px dashed #cdd7e2;padding:10px 16px 12px;font-size:14px;color:var(--mut);display:flex;flex-wrap:wrap;gap:4px 16px}
 .bp-f b{color:var(--navy);letter-spacing:.06em}
-.bp-f p{flex-basis:100%;margin:0}
+.bp-f p{flex-basis:100%;margin:0;white-space:pre-wrap}
 
 /* DAYS */
 .strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:10px 0 6px;margin:0 -4px;padding-inline:4px}
@@ -132,7 +132,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .mini{display:flex;border:1px solid var(--line);border-radius:12px;background:#fff;margin:10px 0;overflow:hidden}
 .mini .a{padding:10px 14px;border-right:1.5px dashed #cdd7e2;font-size:22px;font-weight:300;font-variant-numeric:tabular-nums;text-align:center;flex:none;font-family:Georgia,serif}
 .mini .a small{display:block;font-size:11px;letter-spacing:.12em;color:var(--mut);font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-.mini .b{padding:10px 14px;font-size:14px;color:var(--mut);min-width:0}
+.mini .b{padding:10px 14px;font-size:14px;color:var(--mut);min-width:0;white-space:pre-wrap}
 .mini .b b{color:var(--navy);font-size:17px}
 .tg{font-size:12px;background:var(--ice2);color:#2c6aa0;border-radius:99px;padding:0 8px;margin-left:6px}
 
