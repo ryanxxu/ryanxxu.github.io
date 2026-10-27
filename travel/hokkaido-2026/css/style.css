@@ -75,12 +75,26 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .sp.td{box-shadow:0 0 0 2px var(--ice2)}
 .sp.on{background:var(--navy);border-color:var(--navy);border-bottom-color:var(--dc);color:#fff}
 .sp.on small,.sp.on em{color:#c3d1e0}
-.dh{display:flex;align-items:flex-end;gap:16px;margin:18px 0 6px}
-.big{font-size:72px;line-height:.85;font-weight:300;letter-spacing:-.05em;flex:none}
-.big small{display:block;font-size:15px;letter-spacing:.14em;color:var(--ice);font-weight:400;margin-top:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-.dhr{min-width:0}
-.area{font-size:13px;letter-spacing:.12em;color:var(--c);font-weight:700}
-.area em{font-style:normal;margin-left:8px;background:var(--ice);color:#fff;border-radius:99px;padding:0 8px;letter-spacing:.06em;font-size:13px}
+.dh{display:flex;align-items:flex-end;gap:14px;margin:20px 0 12px}
+.big{font-size:72px;line-height:.78;font-weight:300;letter-spacing:-.05em;flex:none}
+.dhr{min-width:0;padding-bottom:1px}
+.dmeta{font-size:14px;color:var(--mut);margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:0 4px}
+.mon{color:var(--ice);font-weight:600;letter-spacing:.14em;margin-right:8px}
+.dmeta em{font-style:normal;margin-left:8px;background:var(--ice);color:#fff;border-radius:99px;padding:0 8px;letter-spacing:.06em;font-size:13px}
+.dh .ttl.sm{line-height:1.15}
+.area{font-size:14px;letter-spacing:.08em;color:var(--c);font-weight:700;display:flex;align-items:center}
+.area .dot{width:8px;height:8px;margin-right:6px}
+/* 天氣方塊 */
+.wxb{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px}
+.wxt{display:flex;align-items:center;gap:8px;margin-top:4px}
+.wxi{font-size:28px;line-height:1}
+.wxt b{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.wxs{font-size:14px;color:var(--mut);margin-top:2px}
+.wxs small{display:block;font-size:13px;color:#a2afbf}
+.sunl{margin:0;display:grid;gap:2px;border-left:1px dashed var(--line);padding-left:14px}
+.sunl div{display:flex;gap:10px;font-size:14px}
+.sunl dt{color:var(--mut)}
+.sunl dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}
 .meta{font-size:14px;color:var(--mut);margin:8px 0 12px;line-height:1.7}
 .meta small{font-size:13px}
 .note{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0}

@@ -168,7 +168,7 @@
     return '<div class="strip" id="strip">' + T.days.map(function (x, j) {
       var dj = dayDate(T, j), w = ctx.wx && ctx.wx[j];
       return '<button class="sp' + (j === ctx.day ? ' on' : '') + (j === ctx.today ? ' td' : '') + '" style="--dc:' + dayColor(T, j) + '" data-day="' + j + '">' +
-        '<small>D' + (j + 1) + '</small><b>' + (dj.getMonth() + 1) + '/' + dj.getDate() + '</b><em>' + (w ? wmo(w.code) + ' ' + Math.round(w.hi) + '°' : WDN[dj.getDay()]) + '</em></button>';
+        '<small>D' + (j + 1) + '</small><b>' + (dj.getMonth() + 1) + '/' + dj.getDate() + '</b><em>' + WDN[dj.getDay()] + '</em></button>';
     }).join('') + '</div>';
   }
   /* 航班自動排進當天時間軸 */
@@ -189,12 +189,18 @@
     var d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';
     var dt = dayDate(T, i), a = areaOf(T, i), ds = ymd(dt), isToday = ctx.today === i;
     var s = sunInfo(T, i), w = ctx.wx && ctx.wx[i];
-    var h = '<div class="dh"><div class="big serif">' + pad(dt.getDate()) + '<small>' + MON[dt.getMonth()] + '</small></div>' +
-      '<div class="dhr"><div class="area" style="--c:' + tint(a && a.color) + '">' + esc(a ? a.name : '') + (isToday ? '<em>TODAY</em>' : '') + '</div>' +
-      '<h2 class="ttl serif sm">' + esc(d.title || (a && a.name) || '') + '</h2></div></div>' +
-      '<div class="meta">Day ' + (i + 1) + ' / ' + T.days.length + '　' + wd(dt).replace('星期', '週') +
-      (w ? '　' + wmo(w.code) + ' ' + Math.round(w.lo) + '°–' + Math.round(w.hi) + '°' + (w.pp != null ? '　降雨 ' + w.pp + '%' : '') + (w.sn > 0 ? '　降雪 ' + w.sn + ' cm' : '') + '<small>（' + wxLabel(w.src) + '）</small>' : '') +
-      (s ? '<br>日出 ' + s.rise + '　日落 ' + s.set + (s.dark ? '　天色全暗約 ' + s.dark : '') : '') + '</div>';
+    /* 標題：大日期數字的底線和標題底線對齊；月份、Day、星期放在標題上方一行 */
+    var h = '<div class="dh"><div class="big serif">' + pad(dt.getDate()) + '</div>' +
+      '<div class="dhr"><div class="dmeta"><span class="mon">' + MON[dt.getMonth()] + '</span>' + wd(dt).replace('星期', '週') + '　Day ' + (i + 1) + ' / ' + T.days.length +
+      (isToday ? '<em>TODAY</em>' : '') + '</div>' +
+      '<h2 class="ttl serif sm">' + esc(d.title || (a && a.name) || '') + '</h2></div></div>';
+    /* 天氣方塊：地區、天氣、溫度、降雨／降雪、日出日落 */
+    h += '<div class="wxb"><div class="wxm">' +
+      '<div class="area" style="--c:' + tint(a && a.color) + '"><span class="dot" style="background:' + tint(a && a.color) + '"></span>' + esc(a ? a.name : '') + '</div>' +
+      (w ? '<div class="wxt"><span class="wxi">' + wmo(w.code) + '</span><b>' + Math.round(w.lo) + '° / ' + Math.round(w.hi) + '°</b></div>' +
+        '<div class="wxs">' + [w.pp != null ? '降雨 ' + w.pp + '%' : '', w.sn > 0 ? '降雪 ' + (Math.round(w.sn * 10) / 10) + ' cm' : ''].filter(Boolean).join('　') + '<small>' + wxLabel(w.src) + '</small></div>'
+        : '<div class="wxs">天氣資料讀取中</div>') + '</div>' +
+      (s ? '<dl class="sunl"><div><dt>日出</dt><dd>' + s.rise + '</dd></div><div><dt>日落</dt><dd>' + s.set + '</dd></div>' + (s.dark ? '<div><dt>天黑</dt><dd>' + s.dark + '</dd></div>' : '') + '</dl>' : '') + '</div>';
 
     /* NOTE：當天的待確認、提醒、備案，以及該地區的 Wishlist（預設收起）集中在最上面 */
     var p = pendingByDay(T, i), rm = d.reminders || [], nt = d.notes || [], wl = wishHtml(T, a, ctx);
