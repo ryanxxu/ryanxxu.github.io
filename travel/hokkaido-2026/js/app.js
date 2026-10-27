@@ -1,5 +1,5 @@
 /* 旅遊手冊主程式：讀取 window.TRIP（js/data.js）或解密 window.TRIP_ENC（js/data.enc.js）後渲染。
- * 路由（hash）：#/ 總覽　#/prep 備註　#/area/<id> 區域　#/day/<n> 單日 */
+ * 一頁式：HOME／FLIGHT／DAYS／STAY／NOTES。舊網址 #/day/<n>、#/prep、#/area/<id> 會捲到對應段落 */
 (function (root) {
   'use strict';
 
@@ -84,111 +84,165 @@
   }
   function wxLabel(src) { return src === 'f' ? '即時預報' : src === 'h' ? '去年同日參考' : '實際天氣'; }
   /* ---------- view builders（純函式，回傳 HTML 字串） ---------- */
-  function rnd(i) { var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
   function decoRidge() {
     return '<svg class="deco" viewBox="0 0 390 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3f5"/><stop offset="1" stop-color="#f7f9fb"/></linearGradient></defs>' +
       '<path d="M0 110 L55 62 L88 88 L140 28 L190 84 L232 52 L290 100 L335 44 L390 96 L390 150 L0 150Z" fill="url(#rg)"/>' +
       '<path d="M140 28 L124 49 L136 45 L146 53 L158 44Z M335 44 L322 62 L332 58 L342 65 L352 56Z M55 62 L44 76 L54 72 L62 78Z" fill="#fff"/>' +
       '<path d="M0 110 L55 62 L88 88 L140 28 L190 84 L232 52 L290 100 L335 44 L390 96" fill="none" stroke="#6fa8d6" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
   }
-  function decoDots() {
-    var o = '';
-    for (var i = 0; i < 46; i++) {
-      var r = 1.2 + rnd(i + 9) * 3.6;
-      o += '<circle cx="' + (rnd(i + 1) * 390).toFixed(1) + '" cy="' + (rnd(i + 77) * 140).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + (r > 3 ? '#9cc3e6' : '#bcd6ee') + '" opacity="' + (0.45 + rnd(i + 5) * 0.5).toFixed(2) + '"/>';
-    }
-    return '<svg class="deco" viewBox="0 0 390 150" preserveAspectRatio="xMidYMin slice" aria-hidden="true">' + o + '</svg>';
-  }
-  function summaryOf(d) {
-    if (d.summary) return d.summary;
-    var a = sorted((d.items || []).filter(function (x) { return x.cat !== 'move' && x.cat !== 'stay'; })).slice(0, 4).map(function (x) { return x.title; });
-    return a.join('、');
-  }
-  function hasFlight(d) { return (d.items || []).some(function (x) { return /航班|機場|flight/i.test(x.title); }); }
-  function wxCell(w) {
-    if (!w) return '';
-    return '<div class="wx">' + wmo(w.code) + ' ' + Math.round(w.lo) + '°–' + Math.round(w.hi) + '°<small>' + wxLabel(w.src) + '</small></div>';
-  }
+  /* =====================================================================
+   * 一頁式：HOME → FLIGHT → DAYS → STAY → NOTES，上方固定選單捲動到各段
+   * ===================================================================== */
+  var SECS = [['home', 'Home'], ['flight', 'Flight'], ['days', 'Days'], ['stay', 'Stay'], ['notes', 'Notes']];
+  var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-  function ticket(T, i, ctx) {
-    var d = T.days[i], dt = dayDate(T, i), a = areaOf(T, i), isToday = ctx.today === i, p = pendingByDay(T, i);
-    return '<a class="tk' + (isToday ? ' today' : '') + '" style="--c:' + tint(a && a.color) + '" href="#/day/' + (i + 1) + '">' +
-      '<div class="st"><small>DAY</small><b>' + (i + 1) + '</b><small>' + (dt.getMonth() + 1) + '/' + dt.getDate() + '</small></div>' +
-      '<div class="bd">' + wxCell(ctx.wx && ctx.wx[i]) + '<div class="ar">' + esc(a ? a.name : '') + (isToday ? '<em>TODAY</em>' : '') + '</div>' +
-      '<div class="tt serif">' + esc(d.title || '') + '</div><div class="ds">' + esc(summaryOf(d)) + '</div>' +
-      (p.length ? '<div class="wn">待確認 ' + p.length + ' 項</div>' : '') + (hasFlight(d) ? '<div class="bc"></div>' : '') + '</div></a>';
+  function md(ds) { return +ds.slice(5, 7) + '/' + +ds.slice(8, 10); }
+  function secHead(id, title, meta) {
+    return '<div class="sh1"><b>' + title + '</b>' + (meta ? '<span>' + meta + '</span>' : '') + '</div>';
   }
-
+  /* 可折疊段落；收合狀態記在這台裝置（defShut：沒記錄時預設收起） */
+  function fold(ctx, key, title, meta, body, defShut) {
+    var f = (ctx.fold || {})[key], shut = f == null ? !!defShut : f;
+    return '<details class="blk" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary class="sec2"><b>' + title + '</b>' +
+      (meta ? '<span>' + meta + '</span>' : '') + '<i aria-hidden="true"></i></summary>' + body + '</details>';
+  }
   function pendingBox(T) {
     return (T.pending || []).map(function (p) {
       return '<div class="pd"><b>' + esc(p.title) + '</b>' + (p.desc ? '<p>' + esc(p.desc) + '</p>' : '') +
-        (p.day && T.days[p.day - 1] ? '<a href="#/day/' + p.day + '">前往 Day' + p.day + ' →</a>' : '') + '</div>';
+        (p.day && T.days[p.day - 1] ? '<button class="lnk" data-day="' + (p.day - 1) + '">前往 Day ' + p.day + ' →</button>' : '') + '</div>';
     }).join('');
   }
 
-  function viewHome(T, ctx) {
+  /* ---------- HOME ---------- */
+  function homeHtml(T, ctx) {
     var t = nowIn(T.tz).date, diff = Math.round((parse(T.start) - parse(t)) / 864e5);
     var names = (T.areas || []).map(function (a) { return a.name; }).join('、');
-    var h = decoRidge() + '<div class="pgtop"></div><h1 class="ttl serif">' + esc(T.title) + '</h1><div class="sub">' + T.days.length + ' 天　' + esc(names) + '</div>';
+    var h = decoRidge() + '<div class="pgtop"></div><h1 class="ttl serif">' + esc(T.title) + '</h1>' +
+      '<div class="sub">' + md(T.start) + ' – ' + md(ymd(addDays(T.start, T.days.length - 1))) + '　' + T.days.length + ' 天　' + esc(names) + '</div>';
     h += '<div class="clk" id="clk">' + clockHtml(T) + '</div>';
     if (diff > 0) h += '<div class="cd">距離出發還有 <b>' + diff + '</b> 天</div>';
+    else if (ctx.today >= 0) h += '<div class="cd">旅程第 <b>' + (ctx.today + 1) + '</b> 天　<button class="lnk" data-day="' + ctx.today + '">看今天的行程 →</button></div>';
     if ((T.pending || []).length) h += '<div class="sec">待確認事項 ・ ' + T.pending.length + '</div>' + pendingBox(T);
-    h += '<div class="sec">Itinerary<span>' + wxStamp(ctx) + '</span></div>';
-    T.days.forEach(function (d, i) { h += ticket(T, i, ctx); });
     return h;
   }
 
+  /* ---------- FLIGHT ---------- */
+  function flightTitle(f) { return [f.airline, f.no].filter(Boolean).join(' '); }
+  function flightHtml(T) {
+    var fs = (T.flights || []).slice().sort(function (a, b) { return (a.date + a.dep) < (b.date + b.dep) ? -1 : 1; });
+    if (!fs.length) return '<div class="muted">尚未填寫航班</div>';
+    return fs.map(function (f) {
+      var d = parse(f.date || T.start);
+      return '<div class="bp"><div class="bp-h"><span>' + esc(f.dir || 'FLIGHT') + '</span><span>' + (d.getMonth() + 1) + '/' + d.getDate() + '（' + WDN[d.getDay()] + '）</span></div>' +
+        '<div class="bp-r"><div><b>' + esc(f.dep || '--:--') + '</b><small>' + esc(f.from || '') + '</small></div>' +
+        '<div class="bp-m"><i></i><span>' + esc(f.no || '✈') + '</span><i></i></div>' +
+        '<div class="r"><b>' + esc(f.arr || '--:--') + '</b><small>' + esc(f.to || '') + '</small></div></div>' +
+        '<div class="bp-f">' + ['<span>' + esc(flightTitle(f)) + '</span>', f.pnr ? '<span>訂位代號 <b>' + esc(f.pnr) + '</b></span>' : '', f.cost ? '<span>' + esc(f.cost) + '</span>' : ''].join('') +
+        (f.note ? '<p>' + esc(f.note) + '</p>' : '') + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------- DAYS ---------- */
+  function dayChips(T, ctx) {
+    return '<div class="strip" id="strip">' + T.days.map(function (x, j) {
+      var dj = dayDate(T, j), w = ctx.wx && ctx.wx[j];
+      return '<button class="sp' + (j === ctx.day ? ' on' : '') + (j === ctx.today ? ' td' : '') + '" style="--dc:' + dayColor(T, j) + '" data-day="' + j + '">' +
+        '<small>D' + (j + 1) + '</small><b>' + (dj.getMonth() + 1) + '/' + dj.getDate() + '</b><em>' + (w ? wmo(w.code) + ' ' + Math.round(w.hi) + '°' : WDN[dj.getDay()]) + '</em></button>';
+    }).join('') + '</div>';
+  }
+  /* 航班自動排進當天時間軸 */
+  function dayItems(T, i) {
+    var ds = ymd(dayDate(T, i)), fl = (T.flights || []).filter(function (f) { return f.date === ds; }).map(function (f) {
+      return { time: f.dep, end: f.arr, cat: 'move', fl: 1, title: '✈ ' + flightTitle(f) + '　' + (f.from || '') + ' → ' + (f.to || '') };
+    });
+    return sorted((T.days[i].items || []).concat(fl));
+  }
+  function dayPanel(T, i, ctx) {
+    var d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';
+    var dt = dayDate(T, i), a = areaOf(T, i), ds = ymd(dt), isToday = ctx.today === i;
+    var s = sunInfo(T, i), w = ctx.wx && ctx.wx[i];
+    var h = '<div class="dh"><div class="big serif">' + pad(dt.getDate()) + '<small>' + MON[dt.getMonth()] + '</small></div>' +
+      '<div class="dhr"><div class="area" style="--c:' + tint(a && a.color) + '">' + esc(a ? a.name : '') + (isToday ? '<em>TODAY</em>' : '') + '</div>' +
+      '<h2 class="ttl serif sm">' + esc(d.title || (a && a.name) || '') + '</h2></div></div>' +
+      '<div class="meta">Day ' + (i + 1) + ' / ' + T.days.length + '　' + wd(dt).replace('星期', '週') +
+      (w ? '　' + wmo(w.code) + ' ' + Math.round(w.lo) + '°–' + Math.round(w.hi) + '°' + (w.pp != null ? '　降雨 ' + w.pp + '%' : '') + (w.sn > 0 ? '　降雪 ' + w.sn + ' cm' : '') + '<small>（' + wxLabel(w.src) + '）</small>' : '') +
+      (s ? '<br>日出 ' + s.rise + '　日落 ' + s.set + (s.dark ? '　天色全暗約 ' + s.dark : '') : '') + '</div>';
+
+    /* NOTE：當天的待確認、提醒、備案集中在最上面 */
+    var p = pendingByDay(T, i), rm = d.reminders || [], nt = d.notes || [];
+    if (p.length || rm.length || nt.length) {
+      h += '<div class="note"><div class="nh">Note</div>' +
+        p.map(function (x) { return '<div class="nl pdl"><b>待確認</b>' + esc(x.title) + '</div>'; }).join('') +
+        rm.map(function (x) { return '<div class="nl">' + esc(x) + '</div>'; }).join('') +
+        (nt.length ? '<div class="nl alt"><b>備案</b>' + nt.map(esc).join('、') + '</div>' : '') + '</div>';
+    }
+
+    var items = dayItems(T, i), nowT = nowIn(T.tz).time, nowId = -1, sunDone = false, cats = {}, hasCand = false;
+    items.forEach(function (x) { if (x.cat !== 'move') cats[x.cat || 'other'] = 1; if (x.status === 'candidate' && x.cat !== 'move') hasCand = true; });
+    if (isToday) items.forEach(function (x, k) { if (x.time && x.time <= nowT && (!x.end || nowT < x.end)) nowId = k; });
+    var legend = Object.keys(cats).map(function (k) { var c = CAT[k] || CAT.other; return '<span style="--k:' + c.c + '"><i></i>' + c.n + '</span>'; }).join('') + (hasCand ? '<span class="lc">◯ 候選／待確認</span>' : '');
+    if (legend) h += '<div class="leg">' + legend + '</div>';
+    items.forEach(function (x, k) {
+      if (s && !sunDone && x.time && x.time > s.set) { h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>'; sunDone = true; }
+      var c = CAT[x.cat] || CAT.other, mv = x.cat === 'move' && !x.fl, q = x.place;
+      var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
+      h += '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (k === nowId ? ' now' : '') + '" style="--k:' + c.c + '"><div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div>' +
+        (mv || x.fl ? '' : '<div class="tag">' + c.n + (x.status === 'candidate' ? '<span class="cand">候選方案</span>' : '') + '</div>') +
+        '<div class="tt serif">' + esc(x.title) + '</div>' +
+        (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
+        (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : q ? '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>' : '') + '</div></div>';
+    });
+    if (s && !sunDone && items.length) h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>';
+    if (!items.length) h += '<div class="empty">這天還沒有行程</div>';
+
+    var hs = hotelsFor(T, ds);
+    if (hs.length) h += '<div class="tn">今晚住宿　' + hs.map(function (x) { return '<button class="lnk" data-go="stay">' + esc(x.name) + ' ↓</button>'; }).join('') + '</div>';
+    h += '<div class="pn">' + (i > 0 ? '<button data-day="' + (i - 1) + '">← Day ' + i + '</button>' : '<span></span>') +
+      (i < T.days.length - 1 ? '<button data-day="' + (i + 1) + '">Day ' + (i + 2) + ' →</button>' : '<span></span>') + '</div>';
+    return h;
+  }
+
+  /* ---------- STAY ---------- */
   function hotelsFor(T, dateStr) {
     return (T.hotels || []).filter(function (x) { return x.inn <= dateStr && dateStr < x.out; });
   }
   function nightsOf(x) { return Math.round((parse(x.out) - parse(x.inn)) / 864e5); }
   function hotelHtml(x, tag) {
     var q = x.addr || x.name;
-    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + ' NIGHTS</small>' + x.inn.slice(5).replace('-', '/') + '<small>→ ' + x.out.slice(5).replace('-', '/') + '</small></div>' +
+    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + ' NIGHTS</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
       '<div class="b"><b>' + esc(x.name) + '</b>' + (tag ? '<span class="tg">' + tag + '</span>' : '') +
       (x.addr ? '<div>' + esc(x.addr) + '</div>' : '') + (x.conf ? '<div>訂房編號　' + esc(x.conf) + '</div>' : '') +
       (x.phone ? '<div>' + esc(x.phone) + '</div>' : '') + (x.cost ? '<div>' + esc(x.cost) + '</div>' : '') + (x.note ? '<div>' + esc(x.note) + '</div>' : '') +
       '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div></div></div>';
   }
-
-  function pageTop(kind, title, sub) {
-    return decoDots() + '<div class="pgtop s"></div><h1 class="ttl serif">' + title + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '');
+  function stayHtml(T, ctx) {
+    var hs = (T.hotels || []).slice().sort(function (a, b) { return a.inn < b.inn ? -1 : 1; }), t = nowIn(T.tz).date;
+    return hs.length ? hs.map(function (x) { return hotelHtml(x, x.inn <= t && t < x.out ? '今晚' : ''); }).join('') : '<div class="muted">尚未填寫住宿</div>';
   }
 
-  /* 可折疊段落：標題列 = 英文類別 + 數量；收合狀態記在這台裝置 */
-  function fold(ctx, key, title, meta, body) {
-    var shut = (ctx.fold || {})[key];
-    return '<details class="blk" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary class="sec2"><b>' + title + '</b>' +
-      (meta ? '<span>' + meta + '</span>' : '') + '<i aria-hidden="true"></i></summary>' + body + '</details>';
-  }
-  /* 注意事項可寫成字串（通用）或 {a: 區域 id, t: 文字} */
+  /* ---------- NOTES ---------- */
   function cautionHtml(x) {
     var t = typeof x === 'string' ? x : x.t, k = t.indexOf('：');
     return '<li>' + (k > 0 ? '<b>' + esc(t.slice(0, k)) + '</b><span>' + esc(t.slice(k + 1)) + '</span>' : '<span>' + esc(t) + '</span>') + '</li>';
   }
-  function viewPrep(T, ctx) {
-    var ck = ctx.checks || {}, h = pageTop('prep', '備註', '勾選與收合狀態只存在這台裝置');
-    var hs = (T.hotels || []).slice().sort(function (a, b) { return a.inn < b.inn ? -1 : 1; });
-    h += fold(ctx, 'stay', 'Stay', hs.length ? hs.length + ' 間' : '',
-      hs.length ? hs.map(function (x) { return hotelHtml(x, ''); }).join('') : '<div class="muted">尚未填寫住宿</div>');
-
+  function areaHead(ar) {
+    return '<div class="cgh"><span class="dot" style="background:' + (ar ? ar.color : GREY) + '"></span>' + esc(ar ? ar.name : '通用') + '</div>';
+  }
+  function notesHtml(T, ctx) {
+    var ck = ctx.checks || {}, h = '<div class="muted">勾選與收合狀態只存在這台裝置</div>';
     var list = T.prep || [], done = list.filter(function (x, i) { return ck[i]; }).length;
-    var cl = list.length ? '<div class="bar"><i style="width:' + Math.round(done / list.length * 100) + '%"></i></div><div class="ckg">' +
-      list.map(function (x, i) {
+    h += fold(ctx, 'check', 'Checklist', list.length ? done + ' / ' + list.length : '', list.length ?
+      '<div class="bar"><i style="width:' + Math.round(done / list.length * 100) + '%"></i></div><div class="ckg">' + list.map(function (x, i) {
         return '<label class="ck2' + (ck[i] ? ' done' : '') + '"><input type="checkbox" data-ck="' + i + '"' + (ck[i] ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
-      }).join('') + '</div>' : '<div class="muted">尚無項目</div>';
-    h += fold(ctx, 'check', 'Checklist', list.length ? done + ' / ' + list.length : '', cl);
+      }).join('') + '</div>' : '<div class="muted">尚無項目</div>');
 
-    var cs = T.cautions || [];
+    var cs = T.cautions || [], order = (T.areas || []).map(function (a) { return a.id; }).concat(['']);
     if (cs.length) {
-      var order = (T.areas || []).map(function (a) { return a.id; }).concat(['']), by = {};
+      var by = {};
       cs.forEach(function (x) { var a = typeof x === 'string' ? '' : (x.a || ''); (by[a] = by[a] || []).push(x); });
-      var body = order.filter(function (a) { return by[a]; }).map(function (a) {
-        var ar = areaById(T, a);
-        return '<div class="cg"><div class="cgh"><span class="dot" style="background:' + (ar ? ar.color : GREY) + '"></span>' + esc(ar ? ar.name : '通用') +
-          '</div><ul class="cl">' + by[a].map(cautionHtml).join('') + '</ul></div>';
-      }).join('');
-      h += fold(ctx, 'caution', 'Cautions', cs.length + ' 則', body);
+      h += fold(ctx, 'caution', 'Cautions', cs.length + ' 則', order.filter(function (a) { return by[a]; }).map(function (a) {
+        return '<div class="cg">' + areaHead(areaById(T, a)) + '<ul class="cl">' + by[a].map(cautionHtml).join('') + '</ul></div>';
+      }).join(''));
     }
 
     if ((T.shops || []).length) {
@@ -198,79 +252,19 @@
           '<a href="' + mapUrl(s[0] + ' 札幌') + '" target="_blank" rel="noopener" aria-label="' + esc(s[0]) + ' 地圖">Map ↗</a></div>';
       }).join('') + '</div>');
     }
-    return h;
-  }
-  function prepProgress(T, ck) {
-    var n = 0; (T.prep || []).forEach(function (x, i) { if (ck[i]) n++; });
-    return (T.prep || []).length ? n + '/' + T.prep.length : '';
-  }
 
-  function viewArea(T, id, ctx) {
-    var a = areaById(T, id); if (!a) return '<div class="empty">找不到這個區域</div>';
-    var h = pageTop('area', '<i class="dot" style="background:' + a.color + '"></i>' + esc(a.name), '');
-    h += '<div class="sec">Days<span>' + wxStamp(ctx) + '</span></div>';
-    T.days.forEach(function (d, i) { if (d.area === id) h += ticket(T, i, ctx); });
-    var pool = (T.pool || {})[a.pool];
-    if (pool) {
-      ['t', 'p', 'f', 'b'].forEach(function (k) {
-        var arr = pool[k]; if (!arr || !arr.length) return;
-        h += '<div class="sec">' + POOLCAT[k] + '</div>';
-        arr.forEach(function (e) {
-          var q = e[0] + ' ' + a.pool;
-          h += '<div class="pl"><div class="tt serif">' + esc(e[0]) + '</div>' + (e[1] ? '<div class="ds">' + esc(e[1]) + '</div>' : '') +
-            (k === 't' ? '' : '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>') + '</div>';
-        });
-      });
-    }
-    h += '<div class="sec">Other areas</div><div class="sw">' + (T.areas || []).filter(function (x) { return x.id !== id; }).map(function (x) {
-      return '<a style="--c:' + x.color + '" href="#/area/' + x.id + '">' + esc(x.name) + '</a>';
-    }).join('') + '</div>';
-    return h;
-  }
-
-  var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-
-  function viewDay(T, n, ctx) {
-    var i = n - 1, d = T.days[i]; if (!d) return '<div class="empty">找不到這一天</div>';
-    var dt = dayDate(T, i), a = areaOf(T, i), ds = ymd(dt), isToday = ctx.today === i;
-    var h = decoDots() + '<div class="strip" id="strip">' + T.days.map(function (x, j) {
-      var dj = dayDate(T, j);
-      return '<a class="sp' + (j === i ? ' on' : '') + '" style="--dc:' + dayColor(T, j) + '" href="#/day/' + (j + 1) + '"><b>' + (dj.getMonth() + 1) + '/' + dj.getDate() + '</b><small>D' + (j + 1) + '</small></a>';
-    }).join('') + '</div>';
-    var s = sunInfo(T, i), w = ctx.wx && ctx.wx[i];
-    h += '<div class="big serif">' + pad(dt.getDate()) + '<small>' + MON[dt.getMonth()] + '</small></div>' +
-      '<h1 class="ttl serif sm">' + esc(d.title || (a && a.name) || '') + '</h1>' +
-      '<div class="meta">Day ' + (i + 1) + ' / ' + T.days.length + '　' + wd(dt).replace('星期', '週') + (isToday ? '　<b class="tdy">TODAY</b>' : '') +
-      (w ? '　' + wmo(w.code) + ' ' + Math.round(w.lo) + '°–' + Math.round(w.hi) + '°' + (w.pp != null ? '　降雨 ' + w.pp + '%' : '') + (w.sn > 0 ? '　降雪 ' + w.sn + ' cm' : '') + '<small>（' + wxLabel(w.src) + '）</small>' : '') +
-      (s ? '<br>日出 ' + s.rise + '　日落 ' + s.set + (s.dark ? '　天色全暗約 ' + s.dark : '') : '') + '</div>';
-    h += '<div class="clk" id="clk">' + clockHtml(T, a) + '</div>';
-    var p = pendingByDay(T, i);
-    if (p.length) h += p.map(function (x) { return '<div class="pd"><b>待確認</b><p>' + esc(x.title) + '</p></div>'; }).join('');
-    if ((d.reminders || []).length) h += '<div class="rem">' + d.reminders.map(function (x) { return esc(x); }).join('<br>') + '</div>';
-    if ((d.notes || []).length) h += '<div class="rem alt"><b>備案</b>' + d.notes.map(function (x) { return esc(x); }).join('<br>') + '</div>';
-
-    var items = sorted(d.items || []), nowT = nowIn(T.tz).time, nowId = -1, sunDone = false, cats = {}, hasCand = false;
-    items.forEach(function (x) { if (x.cat !== 'move') cats[x.cat || 'other'] = 1; if (x.status === 'candidate' && x.cat !== 'move') hasCand = true; });
-    if (isToday) items.forEach(function (x, k) { if (x.time && x.time <= nowT && (!x.end || nowT < x.end)) nowId = k; });
-    var legend = Object.keys(cats).map(function (k) { var c = CAT[k] || CAT.other; return '<span style="--k:' + c.c + '"><i></i>' + c.n + '</span>'; }).join('') + (hasCand ? '<span class="lc">◯ 候選／待確認</span>' : '');
-    if (legend) h += '<div class="leg">' + legend + '</div>';
-    items.forEach(function (x, k) {
-      if (s && !sunDone && x.time && x.time > s.set) { h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>'; sunDone = true; }
-      var c = CAT[x.cat] || CAT.other, mv = x.cat === 'move', q = x.place;
-      var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
-      h += '<div class="it' + (mv ? ' mv' : '') + (k === nowId ? ' now' : '') + '" style="--k:' + c.c + '"><div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div>' +
-        (mv ? '' : '<div class="tag">' + c.n + (x.status === 'candidate' ? '<span class="cand">候選方案</span>' : '') + '</div>') +
-        '<div class="tt serif">' + esc(x.title) + '</div>' +
-        (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
-        (q ? '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>' : '') + '</div></div>';
-    });
-    if (s && !sunDone && items.length) h += '<div class="sun">日落 ' + s.set + (s.dark ? ' ・ 天色全暗約 ' + s.dark : '') + '</div>';
-    if (!items.length) h += '<div class="empty">這天還沒有行程</div>';
-
-    var hs = hotelsFor(T, ds), nx = ymd(addDays(T.start, i + 1));
-    if (hs.length) h += '<div class="sec">Stay</div>' + hs.map(function (x) { return hotelHtml(x, (x.inn === ds ? '入住' : '續住') + (x.out === nx ? '・明日退房' : '')); }).join('');
-    h += '<div class="pn">' + (i > 0 ? '<a href="#/day/' + i + '">← Day ' + i + '</a>' : '<span></span>') +
-      (i < T.days.length - 1 ? '<a href="#/day/' + (i + 2) + '">Day ' + (i + 2) + ' →</a>' : '<span></span>') + '</div>';
+    /* 備選清單（原地區頁）：依地區分組，預設收起 */
+    var pool = T.pool || {}, n = 0, body = (T.areas || []).map(function (a) {
+      var pa = pool[a.pool]; if (!pa) return '';
+      return '<div class="cg">' + areaHead(a) + ['t', 'p', 'f', 'b'].map(function (k) {
+        var arr = pa[k]; if (!arr || !arr.length) return ''; n += arr.length;
+        return '<div class="pk"><div class="pkc">' + POOLCAT[k] + '</div>' + arr.map(function (e) {
+          return '<div class="pki"><div><b>' + esc(e[0]) + '</b>' + (e[1] ? '<span>' + esc(e[1]) + '</span>' : '') + '</div>' +
+            (k === 't' ? '' : '<a target="_blank" rel="noopener" href="' + mapUrl(e[0] + ' ' + a.pool) + '">Map ↗</a>') + '</div>';
+        }).join('') + '</div>';
+      }).join('') + '</div>';
+    }).join('');
+    if (n) h += fold(ctx, 'pool', 'Wishlist', n + ' 個', body, true);
     return h;
   }
 
@@ -284,17 +278,21 @@
     return '天氣更新於 ' + (m < 1 ? '剛剛' : m + ' 分鐘前');
   }
 
-  function headerHtml(T, route) {
-    /* 【行程】：旅程期間到當天，否則 Day 1；在單日頁時亮【行程】，地區頁籤只在地區頁亮 */
-    var ti = todayIdx(T), tabs = [['#/', '總覽', route.k === 'home'], ['#/day/' + (ti >= 0 ? ti + 1 : 1), '行程', route.k === 'day'], ['#/prep', '備註', route.k === 'prep']];
-    var curArea = route.k === 'area' ? route.id : null;
-    (T.areas || []).forEach(function (a) { tabs.push(['#/area/' + a.id, a.name, curArea === a.id]); });
+  function headerHtml(T, cur) {
     var last = ymd(addDays(T.start, T.days.length - 1));
-    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../">←</a> ' + esc(T.title) + '<span>' + T.start.slice(5).replace('-', '.') + ' – ' + last.slice(5).replace('-', '.') + (T.people && T.people.length ? '・' + T.people.length + '人' : '') + '</span></div>' +
-      '<div class="tools"><button class="tool" data-act="refresh">↻ 更新</button><button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
-      '<div class="nav" id="tabs">' + tabs.map(function (t) { return '<a class="' + (t[2] ? 'on' : '') + '" href="' + t[0] + '">' + esc(t[1]) + '</a>'; }).join('') + '</div></div>';
+    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單">←</a> ' + esc(T.title) + '<span>' + md(T.start) + ' – ' + md(last) + (T.people && T.people.length ? '・' + T.people.length + '人' : '') + '</span></div>' +
+      '<div class="tools"><button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
+      '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</nav></div>';
+  }
+  function pageHtml(T, ctx) {
+    return '<section id="s-home">' + homeHtml(T, ctx) + '</section>' +
+      '<section id="s-flight">' + secHead('flight', 'Flight', (T.flights || []).length ? T.flights.length + ' 段' : '') + flightHtml(T) + '</section>' +
+      '<section id="s-days">' + secHead('days', 'Days', wxStamp(ctx)) + dayChips(T, ctx) + '<div id="dayp">' + dayPanel(T, ctx.day, ctx) + '</div></section>' +
+      '<section id="s-stay">' + secHead('stay', 'Stay', (T.hotels || []).length ? T.hotels.length + ' 間' : '') + stayHtml(T, ctx) + '</section>' +
+      '<section id="s-notes">' + secHead('notes', 'Notes', '') + notesHtml(T, ctx) + '</section>';
   }
 
+  /* 舊網址相容：#/day/n、#/prep、#/area/<id> */
   function parseRoute(hash) {
     var m = /^#\/(day|area)\/([^/]+)$/.exec(hash || '');
     if (m) return m[1] === 'day' ? { k: 'day', n: +m[2] } : { k: 'area', id: decodeURIComponent(m[2]) };
@@ -333,7 +331,7 @@
     }).then(function (buf) { return JSON.parse(new TextDecoder().decode(buf)); });
   }
 
-  var API = { esc: esc, nowIn: nowIn, sunInfo: sunInfo, groups: groups, todayIdx: todayIdx, viewHome: viewHome, viewPrep: viewPrep, viewArea: viewArea, viewDay: viewDay,
+  var API = { esc: esc, nowIn: nowIn, sunInfo: sunInfo, groups: groups, todayIdx: todayIdx, pageHtml: pageHtml, dayPanel: dayPanel, dayItems: dayItems,
     headerHtml: headerHtml, parseRoute: parseRoute, settle: settle, decryptTrip: decryptTrip, hotelsFor: hotelsFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.TripLib = API;
@@ -346,7 +344,7 @@
   function ls(k, v) {
     try { if (v === undefined) { var r = localStorage.getItem(PFX + k); return r ? JSON.parse(r) : null; } localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { return null; }
   }
-  var ctx = { today: -1, wx: null, wxAt: 0, checks: {}, fold: {} };
+  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, checks: {}, fold: {} }, curSec = 'home';
 
   function boot() {
     var app = document.getElementById('app');
@@ -379,21 +377,49 @@
   function start(t) {
     T = t; document.title = T.title;
     ctx.today = todayIdx(T); ctx.checks = ls('checks') || {}; ctx.fold = ls('fold') || {};
+    ctx.day = ctx.today >= 0 ? ctx.today : 0;
     var c = ls('wx'); if (c && c.sig === T.start + '|' + T.days.length) { ctx.wx = c.data; ctx.wxAt = c.at; }
-    if (!location.hash && ctx.today >= 0) location.replace('#/day/' + (ctx.today + 1));
-    root.addEventListener('hashchange', function () { render(true); });
+    bind(); render(true); go(location.hash || (ctx.today >= 0 ? '#/day/' + (ctx.today + 1) : ''));
+    root.addEventListener('hashchange', function () { go(location.hash); });
+    root.addEventListener('scroll', spy, { passive: true });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { ctx.today = todayIdx(T); render(false); } });
     setInterval(tickClock, 20000);
-    bind(); render(true); loadWx(false);
+    loadWx(false);
+  }
+  /* 依網址捲到對應段落（舊的 #/day/n、#/prep、#/area/<id> 也能用） */
+  function go(hash) {
+    var r = parseRoute(hash);
+    if (r.k === 'day' && T.days[r.n - 1]) { pickDay(r.n - 1); scrollToSec('days'); }
+    else if (r.k === 'area') { for (var i = 0; i < T.days.length; i++) if (T.days[i].area === r.id) { pickDay(i); break; } scrollToSec('days'); }
+    else if (r.k === 'prep') scrollToSec('notes');
+  }
+  function hdH() { return document.getElementById('hd').offsetHeight; }
+  function scrollToSec(id) {
+    var el = document.getElementById('s-' + id); if (!el) return;
+    root.scrollTo({ top: id === 'home' ? 0 : el.getBoundingClientRect().top + root.scrollY - hdH() + 1, behavior: 'smooth' });
+  }
+  function pickDay(i) {
+    ctx.day = i;
+    document.getElementById('dayp').innerHTML = dayPanel(T, i, ctx);
+    var st = document.getElementById('strip');
+    st.querySelectorAll('.sp').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-day') === i); });
+    var on = st.querySelector('.on'); if (on) st.scrollTo({ left: on.offsetLeft - st.clientWidth / 2 + on.offsetWidth / 2, behavior: 'smooth' });
+    try { history.replaceState(null, '', '#/day/' + (i + 1)); } catch (e) { }
+  }
+  /* 捲動時標示目前段落 */
+  function spy() {
+    var y = hdH() + 8, cur = 'home';
+    SECS.forEach(function (s) { var el = document.getElementById('s-' + s[0]); if (el && el.getBoundingClientRect().top <= y) cur = s[0]; });
+    if (root.innerHeight + root.scrollY >= document.documentElement.scrollHeight - 2) cur = SECS[SECS.length - 1][0];
+    if (cur === curSec) return; curSec = cur;
+    document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-go') === cur); });
   }
 
   function render(toTop) {
-    var route = parseRoute(location.hash), y = root.scrollY;
-    document.getElementById('hd').innerHTML = headerHtml(T, route);
-    var html = route.k === 'prep' ? viewPrep(T, ctx) : route.k === 'area' ? viewArea(T, route.id, ctx) : route.k === 'day' ? viewDay(T, route.n, ctx) : viewHome(T, ctx);
-    document.getElementById('app').innerHTML = html;
-    var on = document.querySelector('#tabs .on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
-    var sp = document.querySelector('#strip .on'); if (sp && sp.scrollIntoView) sp.scrollIntoView({ inline: 'center', block: 'nearest' });
+    var y = root.scrollY;
+    document.getElementById('hd').innerHTML = headerHtml(T, curSec);
+    document.getElementById('app').innerHTML = pageHtml(T, ctx);
+    var sp = document.querySelector('#strip .on'); if (sp) { var st = sp.parentNode; st.scrollLeft = sp.offsetLeft - st.clientWidth / 2 + sp.offsetWidth / 2; }
     root.scrollTo(0, toTop ? 0 : y);
   }
   function tickClock() {
@@ -506,11 +532,17 @@
       var b = e.target.closest('button'); if (!b) return;
       if (b.hasAttribute('data-close')) closeModal(); else splitAction(b);
     });
-    document.getElementById('hd').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-act]'); if (!b) return;
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('#mask')) return;
+      var b = e.target.closest('[data-act],[data-go],[data-day]'); if (!b) return;
       var a = b.getAttribute('data-act');
-      if (a === 'refresh') { b.style.opacity = .5; loadWx(true).then(function () { b.style.opacity = ''; render(false); }, function () { b.style.opacity = ''; }); }
-      else if (a === 'fx') fxModal(); else if (a === 'split') splitModal();
+      if (a === 'fx') fxModal(); else if (a === 'split') splitModal();
+      else if (b.hasAttribute('data-go')) scrollToSec(b.getAttribute('data-go'));
+      else if (b.hasAttribute('data-day')) {
+        var inPanel = b.closest('#s-days');
+        pickDay(+b.getAttribute('data-day'));
+        if (!inPanel || b.closest('.pn')) scrollToSec('days');
+      }
     });
     document.getElementById('app').addEventListener('toggle', function (e) {
       var d = e.target; if (!d.getAttribute || !d.getAttribute('data-fold')) return;
