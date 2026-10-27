@@ -3,10 +3,6 @@
 (function (root) {
   'use strict';
 
-  var CAT = {
-    sight: { n: '景點', c: '#3d86c6' }, food: { n: '餐飲', c: '#d9772b' }, shop: { n: '購物', c: '#2f9488' }, stay: { n: '住宿', c: '#6f5fb0' },
-    move: { n: '交通', c: '#8a94a3' }, other: { n: '其他', c: '#64748b' }
-  };
   var POOLCAT = { t: '交通', p: '景點', f: '吃的', b: '買的' };
   var WDN = ['日', '一', '二', '三', '四', '五', '六'];
   var GREY = '#9ca3af';
@@ -168,19 +164,16 @@
       (w ? '　' + wmo(w.code) + ' ' + Math.round(w.lo) + '°–' + Math.round(w.hi) + '°' + (w.pp != null ? '　降雨 ' + w.pp + '%' : '') + (w.sn > 0 ? '　降雪 ' + w.sn + ' cm' : '') + '<small>（' + wxLabel(w.src) + '）</small>' : '') +
       (s ? '<br>日出 ' + s.rise + '　日落 ' + s.set + (s.dark ? '　天色全暗約 ' + s.dark : '') : '') + '</div>';
 
-    /* NOTE：當天的待確認、提醒、備案集中在最上面 */
-    var p = pendingByDay(T, i), rm = d.reminders || [], nt = d.notes || [];
-    if (p.length || rm.length || nt.length) {
+    /* NOTE：當天的待確認、提醒、備案，以及該地區的 Wishlist（預設收起）集中在最上面 */
+    var p = pendingByDay(T, i), rm = d.reminders || [], nt = d.notes || [], wl = wishHtml(T, a, ctx);
+    if (p.length || rm.length || nt.length || wl) {
       h += '<div class="note"><div class="nh">Note</div>' +
         p.map(function (x) { return '<div class="nl pdl"><b>待確認</b>' + esc(x.title) + '</div>'; }).join('') +
         rm.map(function (x) { var k = x.indexOf('：'); return '<div class="nl">' + (k > 0 ? '<b>' + esc(x.slice(0, k)) + '</b>' + esc(x.slice(k + 1)) : esc(x)) + '</div>'; }).join('') +
-        (nt.length ? '<div class="nl alt"><b>備案</b>' + nt.map(esc).join('、') + '</div>' : '') + '</div>';
+        (nt.length ? '<div class="nl alt"><b>備案</b>' + nt.map(esc).join('、') + '</div>' : '') + wl + '</div>';
     }
 
-    var items = dayItems(T, i), nowT = nowIn(T.tz).time, cats = {}, hasCand = false, rows = [];
-    items.forEach(function (x) { if (x.cat !== 'move') cats[x.cat || 'other'] = 1; if (x.status === 'candidate' && x.cat !== 'move') hasCand = true; });
-    var legend = Object.keys(cats).map(function (k) { var c = CAT[k] || CAT.other; return '<span style="--k:' + c.c + '"><i></i>' + c.n + '</span>'; }).join('') + (hasCand ? '<span class="lc">◯ 候選／待確認</span>' : '');
-    if (legend) h += '<div class="leg">' + legend + '</div>';
+    var items = dayItems(T, i), nowT = nowIn(T.tz).time, rows = [];
     /* 依時間排進軸線：行程、日落、現在（只在當天） */
     items.forEach(function (x) { rows.push({ t: x.time || '', x: x }); });
     if (s && items.length) rows.push({ t: s.set, sun: 1 });
@@ -189,12 +182,12 @@
     h += '<div class="tl">' + rows.map(function (r) {
       if (r.sun) return '<div class="it sun"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">日落' + (s.dark ? '・天色全暗約 ' + s.dark : '') + '</div></div>';
       if (r.now) return '<div class="it nowl"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">NOW</div></div>';
-      var x = r.x, c = CAT[x.cat] || CAT.other, mv = x.cat === 'move' && !x.fl, q = x.place;
+      var x = r.x, mv = x.cat === 'move' && !x.fl, q = x.place;
       var on = isToday && x.time && x.time <= nowT && x.end && nowT < x.end;
       var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
-      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" style="--k:' + c.c + '">' +
+      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '">' +
         '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
-        (mv || x.fl ? '' : '<div class="tag">' + c.n + (x.status === 'candidate' ? '<span class="cand">候選方案</span>' : '') + '</div>') +
+        (x.status === 'candidate' && !mv ? '<div class="tag"><span class="cand">候選方案</span></div>' : '') +
         '<div class="tt serif">' + esc(x.title) + '</div>' +
         (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
         (x.fl ? '<div class="lks"><button class="lnk" data-go="flight">航班資訊 ↓</button></div>' : q ? '<div class="lks"><a target="_blank" rel="noopener" href="' + mapUrl(q) + '">Map ↗</a></div>' : '') + '</div></div>';
@@ -227,8 +220,19 @@
   }
 
   /* ---------- NOTES ---------- */
-  function areaHead(ar) {
-    return '<div class="cgh"><span class="dot" style="background:' + (ar ? ar.color : GREY) + '"></span>' + esc(ar ? ar.name : '通用') + '</div>';
+  /* 該地區的 Wishlist（原備選清單），放在每天 NOTE 裡，預設收起 */
+  function wishHtml(T, a, ctx) {
+    var pa = a && (T.pool || {})[a.pool]; if (!pa) return '';
+    var n = 0, body = ['t', 'p', 'f', 'b'].map(function (k) {
+      var arr = pa[k]; if (!arr || !arr.length) return ''; n += arr.length;
+      return '<div class="pk"><div class="pkc">' + POOLCAT[k] + '</div>' + arr.map(function (e) {
+        return '<div class="pki"><div><b>' + esc(e[0]) + '</b>' + (e[1] ? '<span>' + esc(e[1]) + '</span>' : '') + '</div>' +
+          (k === 't' ? '' : '<a target="_blank" rel="noopener" href="' + mapUrl(e[0] + ' ' + a.pool) + '">Map ↗</a>') + '</div>';
+      }).join('') + '</div>';
+    }).join('');
+    if (!n) return '';
+    var key = 'wl-' + a.id, f = (ctx.fold || {})[key], shut = f == null ? true : f;
+    return '<details class="wl" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary><b>Wishlist</b><span>' + esc(a.name) + '・' + n + ' 個</span><i aria-hidden="true"></i></summary>' + body + '</details>';
   }
   function notesHtml(T, ctx) {
     var ck = ctx.checks || {}, h = '<div class="muted">勾選與收合狀態只存在這台裝置</div>';
@@ -246,18 +250,6 @@
       }).join('') + '</div>');
     }
 
-    /* 備選清單（原地區頁）：依地區分組，預設收起 */
-    var pool = T.pool || {}, n = 0, body = (T.areas || []).map(function (a) {
-      var pa = pool[a.pool]; if (!pa) return '';
-      return '<div class="cg">' + areaHead(a) + ['t', 'p', 'f', 'b'].map(function (k) {
-        var arr = pa[k]; if (!arr || !arr.length) return ''; n += arr.length;
-        return '<div class="pk"><div class="pkc">' + POOLCAT[k] + '</div>' + arr.map(function (e) {
-          return '<div class="pki"><div><b>' + esc(e[0]) + '</b>' + (e[1] ? '<span>' + esc(e[1]) + '</span>' : '') + '</div>' +
-            (k === 't' ? '' : '<a target="_blank" rel="noopener" href="' + mapUrl(e[0] + ' ' + a.pool) + '">Map ↗</a>') + '</div>';
-        }).join('') + '</div>';
-      }).join('') + '</div>';
-    }).join('');
-    if (n) h += fold(ctx, 'pool', 'Wishlist', n + ' 個', body, true);
     return h;
   }
 
