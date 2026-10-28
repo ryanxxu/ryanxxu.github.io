@@ -107,12 +107,6 @@
   function secHead(id, title, meta) {
     return '<div class="sh1"><b>' + title + '</b>' + (meta ? '<span>' + meta + '</span>' : '') + '</div>';
   }
-  /* 可折疊段落；收合狀態記在這台裝置（defShut：沒記錄時預設收起） */
-  function fold(ctx, key, title, meta, body, defShut) {
-    var f = (ctx.fold || {})[key], shut = f == null ? !!defShut : f;
-    return '<details class="blk" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary class="sec2"><b>' + title + '</b>' +
-      (meta ? '<span>' + meta + '</span>' : '') + '<i aria-hidden="true"></i></summary>' + body + '</details>';
-  }
   function pendingBox(T) {
     return (T.pending || []).map(function (p) {
       return '<div class="pd"><b>' + esc(p.title) + '</b>' + (p.desc ? '<p>' + esc(p.desc) + '</p>' : '') +
@@ -218,7 +212,7 @@
     if (p.length || rm.length || nt.length || wl) {
       h += '<div class="note"><div class="nh">Note</div>' +
         p.map(function (x) { return '<div class="nl pdl"><b>待確認</b>' + esc(x.title) + '</div>'; }).join('') +
-        rm.map(function (x) { var k = x.indexOf('：'); return '<div class="nl">' + (k > 0 ? '<b>' + esc(x.slice(0, k)) + '</b>' + esc(x.slice(k + 1)) : esc(x)) + '</div>'; }).join('') +
+        rm.map(noteLine).join('') +
         (nt.length ? '<div class="nl alt"><b>備案</b>' + nt.map(esc).join('、') + '</div>' : '') + wl + '</div>';
     }
 
@@ -268,6 +262,10 @@
   }
 
   /* ---------- NOTES ---------- */
+  function noteLine(x) {
+    var k = x.indexOf('：');
+    return '<div class="nl">' + (k > 0 ? '<b>' + esc(x.slice(0, k)) + '</b>' + esc(x.slice(k + 1)) : esc(x)) + '</div>';
+  }
   /* 該地區的 Wishlist（原備選清單），放在每天 NOTE 裡，預設收起 */
   function wishHtml(T, a, ctx) {
     var pa = a && (T.pool || {})[a.pool]; if (!pa) return '';
@@ -281,22 +279,17 @@
     var key = 'wl-' + a.id, f = (ctx.fold || {})[key], shut = f == null ? true : f;
     return '<details class="wl" data-fold="' + key + '"' + (shut ? '' : ' open') + '><summary><b>Wishlist</b><span>' + esc(a.name) + '・' + n + ' 個</span><i aria-hidden="true"></i></summary>' + body + '</details>';
   }
-  function notesHtml(T, ctx) {
-    var ck = ctx.checks || {}, h = '<div class="muted">勾選與收合狀態只存在這台裝置</div>';
-    var list = T.prep || [], done = list.filter(function (x, i) { return ck[i]; }).length;
-    h += fold(ctx, 'check', 'Checklist', list.length ? done + ' / ' + list.length : '', list.length ?
-      '<div class="bar"><i style="width:' + Math.round(done / list.length * 100) + '%"></i></div><div class="ckg">' + list.map(function (x, i) {
-        return '<label class="ck2' + (ck[i] ? ' done' : '') + '"><input type="checkbox" data-ck="' + i + '"' + (ck[i] ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
-      }).join('') + '</div>' : '<div class="muted">尚無項目</div>');
-
-    if ((T.shops || []).length) {
-      h += fold(ctx, 'shops', 'Shop Hours', T.shops.length + ' 家', '<div class="sh">' + T.shops.map(function (s) {
-        return '<div class="shr"><div class="shn">' + titleWithMap(s[0], s[0] + ' 札幌') + '</div><div class="sht">' + esc(s[1]) + '</div>' +
-          '<div class="shb">' + (s[2] ? '<em>' + esc(s[2]) + '</em>' : '') + '</div></div>';
-      }).join('') + '</div>');
-    }
-
-    return h;
+  /* NOTES：一張備註卡片、一行一則（`memo`）；舊資料沒有 memo 時由 prep／shops 轉成文字 */
+  function memoOf(T) {
+    if (T.memo) return T.memo;
+    var m = [];
+    if ((T.prep || []).length) m.push('行前準備：' + T.prep.join('、'));
+    (T.shops || []).forEach(function (s) { m.push(s[0] + '：' + s[1] + (s[2] ? '（' + s[2] + '）' : '')); });
+    return m;
+  }
+  function notesHtml(T) {
+    var m = memoOf(T);
+    return m.length ? '<div class="note memo">' + m.map(noteLine).join('') + '</div>' : '<div class="muted">尚無備註</div>';
   }
 
   function clockHtml(T, area) {
@@ -320,7 +313,7 @@
       '<section id="s-flight">' + secHead('flight', 'Flight', (T.flights || []).length ? T.flights.length + ' 段' : '') + flightHtml(T) + '</section>' +
       '<section id="s-days">' + secHead('days', 'Days', wxStamp(ctx)) + dayChips(T, ctx) + '<div id="dayp">' + dayPanel(T, ctx.day, ctx) + '</div></section>' +
       '<section id="s-stay">' + secHead('stay', 'Stay', (T.hotels || []).length ? T.hotels.length + ' 間' : '') + stayHtml(T, ctx) + '</section>' +
-      '<section id="s-notes">' + secHead('notes', 'Notes', '') + notesHtml(T, ctx) + '</section>';
+      '<section id="s-notes">' + secHead('notes', 'Notes', memoOf(T).length ? memoOf(T).length + ' 則' : '') + notesHtml(T) + '</section>';
   }
 
   /* 舊網址相容：#/day/n、#/prep、#/area/<id> */
@@ -375,7 +368,7 @@
   function ls(k, v) {
     try { if (v === undefined) { var r = localStorage.getItem(PFX + k); return r ? JSON.parse(r) : null; } localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { return null; }
   }
-  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, checks: {}, fold: {} }, curSec = 'home';
+  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, fold: {} }, curSec = 'home';
 
   function boot() {
     var app = document.getElementById('app');
@@ -411,7 +404,7 @@
 
   function start(t) {
     T = t; document.title = T.title;
-    ctx.today = todayIdx(T); ctx.checks = ls('checks') || {}; ctx.fold = ls('fold') || {};
+    ctx.today = todayIdx(T); ctx.fold = ls('fold') || {};
     ctx.day = ctx.today >= 0 ? ctx.today : 0;
     var c = ls('wx'); if (c && c.sig === T.start + '|' + T.days.length) { ctx.wx = c.data; ctx.wxAt = c.at; }
     bind(); render(true); go(location.hash || (ctx.today >= 0 ? '#/day/' + (ctx.today + 1) : ''));
@@ -592,10 +585,6 @@
       var d = e.target; if (!d.getAttribute || !d.getAttribute('data-fold')) return;
       ctx.fold[d.getAttribute('data-fold')] = !d.open; ls('fold', ctx.fold);
     }, true);
-    document.getElementById('app').addEventListener('change', function (e) {
-      var c = e.target.closest('[data-ck]'); if (!c) return;
-      ctx.checks[c.getAttribute('data-ck')] = c.checked; ls('checks', ctx.checks); render(false);
-    });
   }
 
   boot();

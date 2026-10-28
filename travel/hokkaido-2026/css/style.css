@@ -123,8 +123,8 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .it .ds{font-size:14px;color:var(--mut);margin-top:3px;white-space:pre-wrap}
 .mp{display:inline-block;margin-left:6px;padding:0 4px;color:var(--link);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:600;vertical-align:1px}
 .mp svg{width:17px;height:17px;vertical-align:-2px}
-.mini .mp svg,.shn .mp svg,.pki .mp svg{width:16px;height:16px}
-.mini .mp,.shn .mp,.pki .mp{margin-left:4px;font-weight:400}
+.mini .mp svg,.pki .mp svg{width:16px;height:16px}
+.mini .mp,.pki .mp{margin-left:4px;font-weight:400}
 .it.mv .mp svg{width:14px;height:14px}
 .nw{white-space:nowrap}
 .lks{display:flex;gap:14px;margin-top:5px;font-size:14px}
@@ -157,26 +157,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .tg{font-size:13px;background:var(--ice2);color:#2c6aa0;border-radius:99px;padding:0 8px;margin-left:6px}
 
 /* NOTES：可折疊段落 */
-.blk{margin-top:14px;border-top:1px solid var(--line)}
-.sec2{list-style:none;display:flex;align-items:baseline;gap:10px;padding:14px 0 10px;cursor:pointer}
-.sec2::-webkit-details-marker{display:none}
-.sec2 b{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--navy)}
-.sec2 span{font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
-.sec2 i{margin-left:auto;width:9px;height:9px;border-right:1.5px solid var(--mut);border-bottom:1.5px solid var(--mut);transform:rotate(45deg);transition:transform .2s}
-.blk:not([open]) .sec2 i{transform:rotate(-45deg)}
-.bar{height:5px;border-radius:3px;background:var(--ice2);overflow:hidden;margin:0 0 12px}
-.bar i{display:block;height:100%;background:var(--link);border-radius:3px}
-.ckg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.ck2{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;min-width:0;font-size:16px}
-.ck2 input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--link)}
-.ck2.done{background:transparent}.ck2.done span{text-decoration:line-through;color:var(--mut)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
-.sh{display:flex;flex-direction:column}
-.shr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n b" "t t";column-gap:10px;padding:10px 0;border-top:1px dashed var(--line);align-items:baseline}
-.shr:first-child{border-top:0}
-.shn{grid-area:n;font-size:16px}
-.sht{grid-area:t;font-size:14px;color:var(--mut);font-variant-numeric:tabular-nums}
-.shb{grid-area:b}.shb em{font-style:normal;font-size:13px;color:var(--link);background:var(--ice2);border-radius:999px;padding:1px 8px;white-space:nowrap}
 .wl{border-top:1px dashed var(--line);margin-top:8px}
 .wl summary{list-style:none;display:flex;align-items:baseline;gap:10px;padding:10px 0 4px;cursor:pointer}
 .wl summary::-webkit-details-marker{display:none}
@@ -189,7 +170,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .pki{display:block;padding:6px 0 6px 16px;border-left:2px solid var(--line);margin-left:4px}
 .pki b{font-weight:600;font-size:16px;display:block}
 .pki>div>span{display:block;font-size:14px;color:var(--mut)}
-@media(prefers-reduced-motion:reduce){.sec2 i{transition:none}html{scroll-behavior:auto}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 /* modal */
 .mask{position:fixed;inset:0;background:rgba(10,20,36,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
@@ -214,7 +195,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .sheet .sec-t{font-size:14px;color:var(--mut);margin:16px 0 6px}
 
 /* 可點範圍放大：外觀不變，觸控範圍約 44pt */
-.home,.lnk,.mp,.tool,.pn button,.sp,.sec2,.wl summary{position:relative}
+.home,.lnk,.mp,.tool,.pn button,.sp,.wl summary{position:relative}
 .home::after,.lnk::after,.mp::after{content:"";position:absolute;inset:-12px -10px}
 .tool::after{content:"";position:absolute;inset:-8px -3px}
 .tool{padding:4px 12px}
@@ -251,3 +232,5 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .gate .err{color:var(--berry);font-size:14px;min-height:22px}
 .gate .btn.pri{width:100%;padding:12px;font-size:17px;border-radius:12px;font-weight:600}
 .ghint{font-size:14px;color:var(--mut);text-align:center;margin-top:16px}
+
+.note.memo{margin-top:6px}
