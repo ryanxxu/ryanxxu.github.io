@@ -235,14 +235,14 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 
 .note.memo{margin-top:6px}
 
-/* 路線圖（HOME 卡片＋放大視窗） */
-.rmc{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0 4px}
-.rmh{display:flex;align-items:baseline;justify-content:space-between}
-.rmh b{font-size:13px;letter-spacing:.2em;text-transform:uppercase}
-.rmh span{font-size:14px;color:var(--link)}
-.rmv{display:block;margin:8px 0 4px}
-.rmc small{display:block;font-size:13px;color:var(--mut)}
-.rmc svg,.rmw svg{display:block;width:100%;height:auto}
+/* 路線圖（HOME 按鈕＋放大視窗） */
+.rmb{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0 4px}
+.rmb .rmi{width:26px;height:26px;color:var(--ice);flex:none}
+.rmb span{flex:1;min-width:0}
+.rmb b{display:block;font-size:14px;letter-spacing:.18em;text-transform:uppercase}
+.rmb small{display:block;font-size:13px;color:var(--mut)}
+.rmb i{font-style:normal;color:var(--link);font-size:18px}
+.rmw svg{display:block;width:100%;height:auto}
 .rmt{font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin:16px 0 6px}
 .rmz{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:#fff}
 .rmw{width:560px;padding:6px}

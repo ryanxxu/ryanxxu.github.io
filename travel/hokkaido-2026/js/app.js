@@ -128,10 +128,10 @@
     if ((T.pending || []).length) h += '<div class="sec">待確認事項 ・ ' + T.pending.length + '</div>' + pendingBox(T);
     return h;
   }
-  /* 路線圖（存在加密資料 TRIP.routeMap，靜態 SVG）：首頁縮圖，點開放大 */
+  /* 路線圖（存在加密資料 TRIP.routeMap，靜態 SVG）：首頁一個按鈕，點開看大圖 */
+  var MAPICON = '<svg class="rmi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>';
   function routeCard(T) {
-    return '<button class="rmc" data-act="route"><span class="rmh"><b>Route Map</b><span>點開放大</span></span>' +
-      '<span class="rmv">' + T.routeMap.maps[0].svg + '</span><small>全區路線・札幌市區，含大概移動時間</small></button>';
+    return '<button class="rmb" data-act="route">' + MAPICON + '<span><b>Route Map</b><small>全區路線・札幌市區，大概移動時間</small></span><i aria-hidden="true">→</i></button>';
   }
   function routeLegend(T) {
     var c = T.routeMap.colors || {};
