@@ -192,8 +192,17 @@
       var ap = function (x) { return String(x || '').replace(/\s*(國際)?機場.*$/, ''); };
       return { time: f.dep, end: f.arr, cat: 'move', fl: 1, title: (f.no || flightTitle(f)) + '　' + ap(f.from) + ' → ' + ap(f.to) };
     });
-    return sorted((T.days[i].items || []).concat(fl));
+    /* 住宿自動排進時間軸：退房放最上面（沒填 outTime 就標「出門前」），今晚住宿放最後；名稱去掉括號裡的英文 */
+    var hn = function (h) { return String(h.name || '').replace(/\s*[（(][^）)]*[）)]\s*$/, ''); };
+    var outs = (T.hotels || []).filter(function (h) { return h.out === ds; }).map(function (h) {
+      var m = /Check-out\s*([\d:]+)\s*前/i.exec(h.note || '');
+      return { time: h.outTime || '', cat: 'stay', hs: 'out', title: '退房　' + hn(h), place: h.addr || h.name, note: m ? m[1] + ' 前退房' : '' };
+    });
+    var nights = hotelsFor(T, ds).map(function (h) { return { cat: 'stay', hs: 'night', title: '住宿　' + hn(h), place: h.addr || h.name }; });
+    var main = sorted((T.days[i].items || []).concat(fl, outs.filter(function (x) { return x.time; })));
+    return outs.filter(function (x) { return !x.time; }).concat(main, nights);
   }
+  var BED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V7M3 13h18v5M21 13v-1a3 3 0 0 0-3-3h-7v4"/><circle cx="7" cy="10.5" r="1.6"/></svg>';
   /* 名稱後面接線條地圖圖釘；最後一個字和圖釘不分開換行 */
   var PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   function titleWithMap(t, q) {
@@ -228,18 +237,19 @@
 
     var items = dayItems(T, i), nowT = nowIn(T.tz).time, rows = [];
     /* 依時間排進軸線：行程、日落、現在（只在當天） */
-    items.forEach(function (x, k) { rows.push({ t: x.time || '', x: x, k: k }); });
+    items.forEach(function (x, k) { rows.push({ t: x.hs === 'night' ? '~' : x.hs === 'out' && !x.time ? '' : x.time || '', x: x, k: k, r: x.hs === 'out' && !x.time ? -1 : 0 }); });
     if (s && items.length) rows.push({ t: s.set, sun: 1 });
     if (isToday && items.length) rows.push({ t: nowT, now: 1 });
-    rows.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : (a.now ? 1 : b.now ? -1 : 0); });
+    rows.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : (a.r || 0) - (b.r || 0) || (a.now ? 1 : b.now ? -1 : 0) || (a.k || 0) - (b.k || 0); });
     h += '<div class="tl">' + rows.map(function (r) {
       if (r.sun) return '<div class="it sun"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">日落' + (s.dark ? '・天色全暗約 ' + s.dark : '') + '</div></div>';
       if (r.now) return '<div class="it nowl"><div class="tm">' + r.t + '</div><div class="rl"><i></i></div><div class="bd">NOW</div></div>';
       var x = r.x, mv = x.cat === 'move' && !x.fl, q = x.place;
       var on = isToday && x.time && x.time <= nowT && x.end && nowT < x.end;
       var dupNote = mv && x.time && x.note && x.note.replace(/\b0/g, '') === (x.time + ' – ' + (x.end || '')).replace(/\b0/g, '');
-      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" data-k="' + r.k + '">' +
-        '<div class="tm">' + esc(x.time || '全天') + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i></i></div><div class="bd">' +
+      var tm = x.time || (x.hs === 'out' ? '出門前' : x.hs === 'night' ? '今晚' : '全天');
+      return '<div class="it' + (mv ? ' mv' : '') + (x.fl ? ' fl' : '') + (x.hs ? ' hs' : '') + (x.status === 'candidate' ? ' cd' : '') + (on ? ' now' : '') + '" data-k="' + r.k + '">' +
+        '<div class="tm">' + esc(tm) + (x.end ? '<small>' + esc(x.end) + '</small>' : '') + '</div><div class="rl"><i>' + (x.hs ? BED : '') + '</i></div><div class="bd">' +
         (x.status === 'candidate' && !mv ? '<div class="tag"><span class="cand">候選方案</span></div>' : '') +
         '<div class="tt">' + (q && !x.fl ? titleWithMap(x.title, q) : esc(x.title)) + '</div>' +
         (x.note && !dupNote ? '<div class="ds">' + esc(x.note) + '</div>' : '') + (x.cost ? '<div class="ds">' + esc(x.cost) + '</div>' : '') +
@@ -247,8 +257,6 @@
     }).join('') + '</div>';
     if (!items.length) h += '<div class="empty">這天還沒有行程</div>';
 
-    var hs = hotelsFor(T, ds);
-    if (hs.length) h += '<div class="tn">今晚住宿　' + hs.map(function (x) { return '<button class="lnk" data-go="stay">' + esc(x.name) + ' ↓</button>'; }).join('') + '</div>';
     h += '<div class="pn">' + (i > 0 ? '<button data-day="' + (i - 1) + '">← Day ' + i + '</button>' : '<span></span>') +
       (i < T.days.length - 1 ? '<button data-day="' + (i + 1) + '">Day ' + (i + 2) + ' →</button>' : '<span></span>') + '</div>';
     return h;

@@ -29,7 +29,7 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 - 上方固定英文選單 HOME｜FLIGHT｜DAYS｜STAY｜NOTES，點了捲到該段，捲動時自動標示（scrollspy）。右上只留「匯率」「分帳」；天氣自動抓、30 分鐘快取，回到頁面時過期就重抓（沒有更新按鈕）。
 - HOME：標題、時鐘、倒數、ROUTE MAP 按鈕（不放縮圖；`TRIP.routeMap`：靜態 SVG＋圖例，**存在加密資料裡**，不可放成公開圖片檔；點開放大、可左右滑動；只畫大景點間的大概移動時間，行程變動不會自動更新，要手動重畫；更新行程時記得把 routeMap 一起放回 data.js 並同步編輯器。編輯器存檔前會先讀雲端最新版，保留它沒有的欄位如 routeMap）、待確認；旅程期間多一張「進行中／接下來」卡片（今天行程結束後顯示「明天」第一項），點了跳到時間軸那一列並閃一下（`nextHtml()`、`jumpTo()`）。FLIGHT：`TRIP.flights[]`（dir、date、airline、no、from、to、dep、arr、pnr、cost、note）登機證卡片，並自動排進當天時間軸，時間軸上用短標題「CI130　桃園 → 新千歲」（不要再在 days.items 放航班）。
 - DAYS：D1–D5 切換（只顯示日期與星期，不放天氣；旅程期間預設當天，否則 Day 1）；當天標題區＝大日期數字與標題底部對齊、上方一行「NOV 週四 Day 1/5」；下面一個天氣方塊（地區、天氣圖示、低/高溫、降雨/降雪、資料來源｜右側日出/日落/天黑）；再來 NOTE 框 = 當天待確認＋`reminders`（「名稱：說明」名稱加粗）＋`notes`（備案）＋該地區 Wishlist（`pool`，預設收起）；下面是直式時間軸，**不顯示類別**（使用者覺得花俏）：一般深藍圓點、交通空心點＋灰斜體（`cat:"move"`）、航班 ✈、候選紅圈、日落金點、旅程中的紅色 NOW 線。行程/飯店/航班的 `note` 可含換行，網站分行顯示（pre-wrap）。
-- STAY：飯店卡片（`inn <= date < out`）；每日行程底部顯示「今晚住宿」連到 STAY。
+- STAY：飯店卡片（`inn <= date < out`）。住宿也自動排進每日時間軸（🛏 圖示）：退房日最上面「出門前　退房 ○○」（可用 hotel.`outTime` 指定時間；備註裡的 Check-out 時間顯示成「11:00 前退房」），每晚最後一列「今晚　住宿 ○○」＋地圖圖釘；名稱去掉括號英文。取行李／換飯店由使用者在行程手動加。
 - NOTES：一張備註卡片、一行一則（`TRIP.memo[]`，「名稱：說明」名稱加粗），沒有子分類、沒有勾選框。舊的 `prep`／`shops` 已轉進 memo（`memoOf()` 仍可讀舊資料）；CAUTIONS 已併入各天 `reminders`；WISHLIST 在每天 NOTE 裡。
 - 舊網址相容：`#/day/<n>` 切到該天並捲到 DAYS、`#/prep` 捲到 NOTES、`#/area/<id>` 切到該區第一天。
 - 字級：內文 17px（iPhone 16 Pro），最小 13px；可點元素外觀不變但觸控範圍放大到約 44pt；使用者偏好段落／選單用英文。

@@ -144,7 +144,6 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .it.nowl .tm{padding-top:4px}.it.nowl .bd{padding:4px 0 10px;position:relative}
 .it.nowl .bd::after{content:"";position:absolute;left:44px;right:0;top:13px;border-top:1.5px solid var(--berry)}
 .it.nowl .rl i{top:7px;width:10px;height:10px;margin-left:-5px;background:var(--berry)}
-.tn{border-top:1px solid var(--line);padding:12px 0 0;font-size:14px;color:var(--mut)}
 .pn{display:flex;justify-content:space-between;margin-top:22px}
 .pn button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 18px;font-size:15px}
 
@@ -252,3 +251,9 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .rm-c{font-size:13px;font-weight:600;fill:#17304f;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 .rm-e{fill:#66788f;font-weight:500}
 .rm-p{font-size:11.5px;font-weight:700;letter-spacing:.02em}
+
+/* 時間軸上的住宿（退房／今晚住宿） */
+.it.hs .rl i{width:22px;height:22px;margin-left:-11px;top:9px;background:var(--snow);box-shadow:none;color:var(--navy);border-radius:0}
+.it.hs .rl i svg{width:22px;height:22px;display:block}
+.it.hs .tt{font-size:17px;font-weight:600}
+.it.hs .tm{font-size:14px}
