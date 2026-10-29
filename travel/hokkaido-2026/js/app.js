@@ -124,8 +124,18 @@
     if (diff > 0) h += '<div class="cd">距離出發還有 <b>' + diff + '</b> 天</div>';
     else if (ctx.today >= 0) h += '<div class="cd">旅程第 <b>' + (ctx.today + 1) + '</b> 天　<button class="lnk" data-day="' + ctx.today + '">看今天的行程 →</button></div>';
     if (ctx.today >= 0) h += '<div id="nx">' + nextHtml(T, ctx) + '</div>';
+    if (T.routeMap && (T.routeMap.maps || []).length) h += routeCard(T);
     if ((T.pending || []).length) h += '<div class="sec">待確認事項 ・ ' + T.pending.length + '</div>' + pendingBox(T);
     return h;
+  }
+  /* 路線圖（存在加密資料 TRIP.routeMap，靜態 SVG）：首頁縮圖，點開放大 */
+  function routeCard(T) {
+    return '<button class="rmc" data-act="route"><span class="rmh"><b>Route Map</b><span>點開放大</span></span>' +
+      '<span class="rmv">' + T.routeMap.maps[0].svg + '</span><small>全區路線・札幌市區，含大概移動時間</small></button>';
+  }
+  function routeLegend(T) {
+    var c = T.routeMap.colors || {};
+    return Object.keys(c).map(function (d) { return '<span><i style="background:' + c[d] + '"></i>' + d + '</span>'; }).join('');
   }
   /* 旅程中：首頁顯示「進行中／接下來」，點了跳到時間軸上那一列 */
   function nextHtml(T, ctx) {
@@ -525,6 +535,14 @@
     });
   }
 
+  function routeModal() {
+    var m = T.routeMap;
+    openModal('<h3>Route Map<button data-close>✕</button></h3><div class="muted">地圖可左右滑動；位置與時間皆為概略估算，以 Google 地圖為準。</div>' +
+      m.maps.map(function (x) {
+        return '<div class="rmt">' + esc(x.title) + '</div><div class="rmz"><div class="rmw">' + x.svg + '</div></div>' +
+          '<div class="rml">' + routeLegend(T) + (x.legend || []).map(function (l) { return '<span>' + esc(l) + '</span>'; }).join('') + '</div>';
+      }).join('') + (m.updated ? '<div class="muted" style="margin-top:10px">依 ' + esc(m.updated) + ' 的行程繪製</div>' : ''));
+  }
   function members() {
     var m = ls('members'); if (m) return m;
     return (T.people || []).slice();
@@ -572,7 +590,7 @@
       if (e.target.closest('#mask')) return;
       var b = e.target.closest('[data-act],[data-go],[data-day],[data-jump]'); if (!b) return;
       var a = b.getAttribute('data-act');
-      if (a === 'fx') fxModal(); else if (a === 'split') splitModal();
+      if (a === 'fx') fxModal(); else if (a === 'split') splitModal(); else if (a === 'route') routeModal();
       else if (b.hasAttribute('data-go')) scrollToSec(b.getAttribute('data-go'));
       else if (b.hasAttribute('data-jump')) { var j = b.getAttribute('data-jump').split(':'); jumpTo(+j[0], +j[1]); }
       else if (b.hasAttribute('data-day')) {

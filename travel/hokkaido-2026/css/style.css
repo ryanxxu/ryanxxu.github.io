@@ -234,3 +234,21 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .ghint{font-size:14px;color:var(--mut);text-align:center;margin-top:16px}
 
 .note.memo{margin-top:6px}
+
+/* 路線圖（HOME 卡片＋放大視窗） */
+.rmc{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0 4px}
+.rmh{display:flex;align-items:baseline;justify-content:space-between}
+.rmh b{font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.rmh span{font-size:14px;color:var(--link)}
+.rmv{display:block;margin:8px 0 4px}
+.rmc small{display:block;font-size:13px;color:var(--mut)}
+.rmc svg,.rmw svg{display:block;width:100%;height:auto}
+.rmt{font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin:16px 0 6px}
+.rmz{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:#fff}
+.rmw{width:560px;padding:6px}
+.rml{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--mut);margin-top:6px}
+.rml i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.rm-r{font-size:13px;font-weight:700;fill:#17304f;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.rm-c{font-size:13px;font-weight:600;fill:#17304f;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.rm-e{fill:#66788f;font-weight:500}
+.rm-p{font-size:11.5px;font-weight:700;letter-spacing:.02em}
