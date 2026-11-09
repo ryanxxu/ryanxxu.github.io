@@ -6,7 +6,7 @@
 ```
 index.html                         第 1 層：入口頁 "Ryan's Space"（以使用者自己維護的版本為準，勿整份覆蓋）
 travel/index.html + trips.js       第 2 層：旅行清單（依開始年份分組，狀態標籤：進行中／即將出發／已結束）
-travel/hokkaido-2026/              第 3 層：行程頁（2026-11-19 ~ 11-23，札幌、小樽、旭川美瑛、定山溪、札幌）
+travel/hokkaido-2026/              第 3 層：行程頁（2026-11-19 ~ 11-23，札幌、小樽、美瑛富良野（D3 Klook 巴士團）、定山溪、札幌）
   index.html  css/style.css  js/app.js
   js/data.js       明文行程 window.TRIP —— .gitignore 排除，絕不上傳
   js/data.enc.js   加密資料 window.TRIP_ENC —— 上傳這個
