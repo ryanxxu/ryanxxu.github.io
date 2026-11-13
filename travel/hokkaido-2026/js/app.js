@@ -269,7 +269,7 @@
   function nightsOf(x) { return Math.round((parse(x.out) - parse(x.inn)) / 864e5); }
   function hotelHtml(x, tag) {
     var q = x.addr || x.name;
-    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + ' NIGHTS</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
+    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + (nightsOf(x) == 1 ? ' NIGHT' : ' NIGHTS') + '</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
       '<div class="b"><b>' + titleWithMap(x.name, q) + '</b>' + (tag ? '<span class="tg">' + tag + '</span>' : '') +
       (x.addr ? '<div>' + esc(x.addr) + '</div>' : '') + (x.conf ? '<div>訂房編號　' + esc(x.conf) + '</div>' : '') +
       (x.phone ? '<div>' + esc(x.phone) + '</div>' : '') + (x.cost ? '<div>' + esc(x.cost) + '</div>' : '') + (x.note ? '<div>' + esc(x.note) + '</div>' : '') + '</div></div>';
@@ -321,8 +321,7 @@
   }
 
   function headerHtml(T, cur) {
-    var last = ymd(addDays(T.start, T.days.length - 1));
-    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單">←</a> ' + esc(T.title) + '<span>' + md(T.start) + ' – ' + md(last) + (T.people && T.people.length ? '・' + T.people.length + '人' : '') + '</span></div>' +
+    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單"><span class="ar">←</span>TRAVEL</a></div>' +
       '<div class="tools"><button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
       '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</nav></div>';
   }
@@ -386,7 +385,7 @@
   function ls(k, v) {
     try { if (v === undefined) { var r = localStorage.getItem(PFX + k); return r ? JSON.parse(r) : null; } localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { return null; }
   }
-  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, fold: {} }, curSec = 'home';
+  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, fold: {} }, curSec = 'home', spyLock = 0;
 
   function boot() {
     var app = document.getElementById('app');
@@ -442,6 +441,8 @@
   function hdH() { return document.getElementById('hd').offsetHeight; }
   function scrollToSec(id) {
     var el = document.getElementById('s-' + id); if (!el) return;
+    /* 點選單時直接標示該段，捲動途中不讓 scrollspy 改掉（STAY 在頁尾附近時會被判成 NOTES） */
+    spyLock = Date.now() + 1200; setOn(id);
     root.scrollTo({ top: id === 'home' ? 0 : el.getBoundingClientRect().top + root.scrollY - hdH() + 1, behavior: 'smooth' });
   }
   function pickDay(i) {
@@ -457,6 +458,10 @@
     var y = hdH() + 8, cur = 'home';
     SECS.forEach(function (s) { var el = document.getElementById('s-' + s[0]); if (el && el.getBoundingClientRect().top <= y) cur = s[0]; });
     if (root.innerHeight + root.scrollY >= document.documentElement.scrollHeight - 2) cur = SECS[SECS.length - 1][0];
+    if (Date.now() < spyLock) return;
+    setOn(cur);
+  }
+  function setOn(cur) {
     if (cur === curSec) return; curSec = cur;
     document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-go') === cur); });
   }
