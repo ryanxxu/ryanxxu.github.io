@@ -269,7 +269,7 @@
   function nightsOf(x) { return Math.round((parse(x.out) - parse(x.inn)) / 864e5); }
   function hotelHtml(x, tag) {
     var q = x.addr || x.name;
-    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + ' NIGHTS</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
+    return '<div class="mini"><div class="a"><small>' + nightsOf(x) + (nightsOf(x) == 1 ? ' NIGHT' : ' NIGHTS') + '</small>' + md(x.inn) + '<small>→ ' + md(x.out) + '</small></div>' +
       '<div class="b"><b>' + titleWithMap(x.name, q) + '</b>' + (tag ? '<span class="tg">' + tag + '</span>' : '') +
       (x.addr ? '<div>' + esc(x.addr) + '</div>' : '') + (x.conf ? '<div>訂房編號　' + esc(x.conf) + '</div>' : '') +
       (x.phone ? '<div>' + esc(x.phone) + '</div>' : '') + (x.cost ? '<div>' + esc(x.cost) + '</div>' : '') + (x.note ? '<div>' + esc(x.note) + '</div>' : '') + '</div></div>';
@@ -321,8 +321,7 @@
   }
 
   function headerHtml(T, cur) {
-    var last = ymd(addDays(T.start, T.days.length - 1));
-    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單">←</a> ' + esc(T.title) + '<span>' + md(T.start) + ' – ' + md(last) + (T.people && T.people.length ? '・' + T.people.length + '人' : '') + '</span></div>' +
+    return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單"><span class="ar">←</span>TRAVEL</a></div>' +
       '<div class="tools"><button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
       '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</nav></div>';
   }

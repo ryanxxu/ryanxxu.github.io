@@ -21,8 +21,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hd-in{max-width:640px;margin:0 auto}
 .hd-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .cap{font-size:13px;letter-spacing:.06em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.cap span{margin-left:8px}
-.cap .home{text-decoration:none;font-size:17px;margin-right:2px}
+.cap .home{text-decoration:none;color:var(--navy);font-size:13px;font-weight:700;letter-spacing:.16em;display:inline-flex;align-items:center;gap:6px}
+.cap .ar{font-size:17px;letter-spacing:0;font-weight:400}
 .tools{display:flex;gap:6px;flex:none}
 .tool{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 11px;font-size:13px;color:var(--navy)}
 .tool:active{background:var(--ice2)}
@@ -120,7 +120,7 @@ h1.ttl{font-weight:700;font-size:34px;line-height:1.2;margin:0 0 4px}
 .cand{display:inline-block;margin-left:8px;font-size:13px;letter-spacing:.04em;color:var(--berry);border:1px solid var(--berry);border-radius:99px;padding:0 8px;font-weight:600}
 .it.cd .rl i{background:var(--snow);border:2px solid var(--berry)}
 .it .tt{font-size:18px;line-height:1.4;font-weight:500}
-.it .ds{font-size:14px;color:var(--mut);margin-top:3px;white-space:pre-wrap}
+.it .ds{font-size:15px;color:var(--mut);margin-top:3px;white-space:pre-wrap}
 .mp{display:inline-block;margin-left:6px;padding:0 4px;color:var(--link);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:600;vertical-align:1px}
 .mp svg{width:17px;height:17px;vertical-align:-2px}
 .mini .mp svg,.pki .mp svg{width:16px;height:16px}
