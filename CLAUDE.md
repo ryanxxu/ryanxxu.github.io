@@ -43,6 +43,7 @@ GitHub Pages 一定公開 → 行程資料用 AES-256-GCM + PBKDF2(250000) 加�
 ## 設計
 - 行程頁：HOME「山稜 SVG」、登機證／住宿卡「票券風」虛線、DAYS 標題區「極簡雜誌風 + 淡雪點」（`decoSnow()`）。配色 snow #f7f9fb、navy #17304f、ice #6fa8d6、berry #b84a62（候選/待確認）。地區色一律用同色系藍灰 `TONES`（依地區順序，不用資料裡的 color）。字體：大標題（手冊名、每日標題、大日期、住宿日期）用 Google Fonts **Noto Serif TC**（`.serif`），其餘含時間軸行程名稱一律黑體。卡片統一白底＋1px 線＋圓角 12、無陰影（只有登機證保留陰影與深色頭）。密碼畫面同風格（山稜、PRIVATE TRIP、全寬解鎖鈕、分享連結提示）。大標題粗體；所有地圖連結（時間軸、飯店、營業時間、Wishlist）都是名稱後面的線條地圖圖釘（SVG `PIN`，使用者選的 B 款，`titleWithMap()`）；不顯示 Photos。
 - 入口頁／第二層：鼠尾草綠（--bg #f4f4f1、--sage #dfe9df、--ink #1d2b22）。Hero：三層同心圓環（::before）+ ✳（::after，旋轉 -15°）；第二層 hero 與第一層同尺寸（min-height 300）。
+- 行程頁區塊區隔（方案 B）：FLIGHT、STAY 整條淺藍灰底 #eaf0f6，與白底段落交替；段落標題前一條 4px 深藍色條（不再用標題上方橫線）。左上只放「← TRAVEL」（原本 13px 灰字）。時間軸說明小字 `.it .ds` 15px。住 1 晚顯示「1 NIGHT」。點選單時暫停 scrollspy 約 1.2 秒，避免 STAY 被標成 NOTES。
 - 兩層都加 `html{scrollbar-gutter:stable}`。
 - 北海道圖示是使用者自己做的內嵌 SVG 日本國旗（trips.js 的 `JP` 變數、入口頁 TRAVEL 陣列）。
 - 視覺要和朋友網站 troyyan.com 不同。

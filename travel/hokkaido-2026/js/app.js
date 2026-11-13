@@ -385,7 +385,7 @@
   function ls(k, v) {
     try { if (v === undefined) { var r = localStorage.getItem(PFX + k); return r ? JSON.parse(r) : null; } localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { return null; }
   }
-  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, fold: {} }, curSec = 'home';
+  var ctx = { today: -1, day: 0, wx: null, wxAt: 0, fold: {} }, curSec = 'home', spyLock = 0;
 
   function boot() {
     var app = document.getElementById('app');
@@ -441,6 +441,8 @@
   function hdH() { return document.getElementById('hd').offsetHeight; }
   function scrollToSec(id) {
     var el = document.getElementById('s-' + id); if (!el) return;
+    /* 點選單時直接標示該段，捲動途中不讓 scrollspy 改掉（STAY 在頁尾附近時會被判成 NOTES） */
+    spyLock = Date.now() + 1200; setOn(id);
     root.scrollTo({ top: id === 'home' ? 0 : el.getBoundingClientRect().top + root.scrollY - hdH() + 1, behavior: 'smooth' });
   }
   function pickDay(i) {
@@ -456,6 +458,10 @@
     var y = hdH() + 8, cur = 'home';
     SECS.forEach(function (s) { var el = document.getElementById('s-' + s[0]); if (el && el.getBoundingClientRect().top <= y) cur = s[0]; });
     if (root.innerHeight + root.scrollY >= document.documentElement.scrollHeight - 2) cur = SECS[SECS.length - 1][0];
+    if (Date.now() < spyLock) return;
+    setOn(cur);
+  }
+  function setOn(cur) {
     if (cur === curSec) return; curSec = cur;
     document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-go') === cur); });
   }

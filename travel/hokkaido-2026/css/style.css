@@ -21,8 +21,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hd-in{max-width:640px;margin:0 auto}
 .hd-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .cap{font-size:13px;letter-spacing:.06em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.cap .home{text-decoration:none;color:var(--navy);font-size:13px;font-weight:700;letter-spacing:.16em;display:inline-flex;align-items:center;gap:6px}
-.cap .ar{font-size:17px;letter-spacing:0;font-weight:400}
+.cap .home{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.cap .ar{font-size:17px;letter-spacing:0}
 .tools{display:flex;gap:6px;flex:none}
 .tool{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 11px;font-size:13px;color:var(--navy)}
 .tool:active{background:var(--ice2)}
@@ -31,11 +31,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .nav button.on{background:var(--navy);color:#fff}
 
 /* 段落 */
-section{padding-top:8px;position:relative}
+section{padding:22px 0 26px;position:relative}
 #s-home>*:not(.deco){position:relative;z-index:1}
-section+section{margin-top:40px}
-.sh1{display:flex;align-items:baseline;gap:10px;border-top:2px solid var(--navy);padding:12px 0 6px}
+#s-home{padding-top:8px}
+/* 區塊區隔 B：FLIGHT、STAY 整條淺藍灰底，與白底段落交替 */
+#s-flight,#s-stay{background:#eaf0f6;box-shadow:0 0 0 100vmax #eaf0f6;clip-path:inset(0 -100vmax)}
+.sh1{display:flex;align-items:baseline;gap:10px;padding:0 0 10px}
 .sh1 b{font-size:15px;letter-spacing:.22em;text-transform:uppercase}
+.sh1 b::before{content:"";display:inline-block;width:4px;height:15px;background:var(--navy);border-radius:2px;margin-right:10px;vertical-align:-2px}
 .sh1 span{margin-left:auto;font-size:13px;color:var(--mut)}
 .sec{font-size:13px;letter-spacing:.12em;color:var(--mut);margin:26px 0 8px}
 
