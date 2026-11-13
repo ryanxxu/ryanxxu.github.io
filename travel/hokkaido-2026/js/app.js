@@ -422,7 +422,7 @@
 
   function start(t) {
     T = t; document.title = T.title;
-    ctx.today = todayIdx(T); ctx.fold = ls('fold') || {};
+    ctx.today = todayIdx(T); ctx.fold = {}; ls('fold', null); /* Wishlist 每次重新打開都收起，不記住 */
     ctx.day = ctx.today >= 0 ? ctx.today : 0;
     var c = ls('wx'); if (c && c.sig === T.start + '|' + T.days.length) { ctx.wx = c.data; ctx.wxAt = c.at; }
     bind(); render(true); go(location.hash || (ctx.today >= 0 ? '#/day/' + (ctx.today + 1) : ''));
@@ -609,7 +609,7 @@
     });
     document.getElementById('app').addEventListener('toggle', function (e) {
       var d = e.target; if (!d.getAttribute || !d.getAttribute('data-fold')) return;
-      ctx.fold[d.getAttribute('data-fold')] = !d.open; ls('fold', ctx.fold);
+      ctx.fold[d.getAttribute('data-fold')] = !d.open;
     }, true);
   }
 
