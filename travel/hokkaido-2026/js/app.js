@@ -320,9 +320,11 @@
     return '天氣更新於 ' + (m < 1 ? '剛剛' : m + ' 分鐘前');
   }
 
+  /* 這台裝置設定過 GitHub 權杖（在 edit.html）才顯示編輯按鈕 */
+  function canEdit() { try { return !!localStorage.getItem('trip:edit:gh'); } catch (e) { return false; } }
   function headerHtml(T, cur) {
     return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單"><span class="ar">←</span>TRAVEL</a></div>' +
-      '<div class="tools"><button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
+      '<div class="tools">' + (canEdit() ? '<a class="tool" href="edit.html" aria-label="編輯行程">✎ 編輯</a>' : '') + '<button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
       '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</nav></div>';
   }
   function pageHtml(T, ctx) {

@@ -25,6 +25,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cap .ar{font-size:17px;letter-spacing:0}
 .tools{display:flex;gap:6px;flex:none}
 .tool{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 11px;font-size:13px;color:var(--navy)}
+a.tool{text-decoration:none;display:inline-flex;align-items:center}
 .tool:active{background:var(--ice2)}
 .nav{display:flex;justify-content:space-between;gap:4px;padding:8px 0 10px}
 .nav button{flex:1;border:0;background:#e9eff5;border-radius:99px;padding:7px 0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#3c536d;font-weight:600;transition:background .2s,color .2s}
