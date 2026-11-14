@@ -332,7 +332,8 @@
       '<section id="s-flight">' + secHead('flight', 'Flight', (T.flights || []).length ? T.flights.length + ' 段' : '') + flightHtml(T) + '</section>' +
       '<section id="s-days">' + secHead('days', 'Days', wxStamp(ctx)) + dayChips(T, ctx) + '<div id="dayp">' + dayPanel(T, ctx.day, ctx) + '</div></section>' +
       '<section id="s-stay">' + secHead('stay', 'Stay', (T.hotels || []).length ? T.hotels.length + ' 間' : '') + stayHtml(T, ctx) + '</section>' +
-      '<section id="s-notes">' + secHead('notes', 'Notes', memoOf(T).length ? memoOf(T).length + ' 則' : '') + notesHtml(T) + '</section>';
+      '<section id="s-notes">' + secHead('notes', 'Notes', memoOf(T).length ? memoOf(T).length + ' 則' : '') + notesHtml(T) + '</section>' +
+      '<div class="foot"><a href="edit.html">✎ 編輯行程</a></div>';
   }
 
   /* 舊網址相容：#/day/n、#/prep、#/area/<id> */
@@ -620,5 +621,22 @@
     }, true);
   }
 
-  boot();
+  /* 加密資料：每次開啟都向伺服器確認是否有新版（no-cache＝有變才下載），離線時改用手機裡的快取 */
+  function loadEnc() {
+    if (root.TRIP || root.TRIP_ENC) return Promise.resolve();
+    var parse = function (r) { if (!r.ok) throw new Error(r.status); return r.text(); };
+    var set = function (t) { var m = /TRIP_ENC\s*=\s*(\{[\s\S]*\})\s*;?\s*$/.exec(t.trim()); if (m) { root.TRIP_ENC = JSON.parse(m[1]); encText = t; } };
+    return fetch('js/data.enc.js', { cache: 'no-cache' }).then(parse).catch(function () {
+      return fetch('js/data.enc.js', { cache: 'force-cache' }).then(parse);
+    }).then(set).catch(function () { });
+  }
+  /* 手機 App 常常停在背景：回到頁面時若伺服器上的行程有新版，重新載入 */
+  var encText = null;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden || !encText) return;
+    fetch('js/data.enc.js', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (t) {
+      if (t && t !== encText) location.reload();
+    }).catch(function () { });
+  });
+  loadEnc().then(boot);
 })(typeof window !== 'undefined' ? window : globalThis);

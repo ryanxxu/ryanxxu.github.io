@@ -18,9 +18,8 @@
 <header class="hd" id="hd"></header>
 <main class="wrap" id="app"></main>
 <div class="mask" id="mask"><div class="sheet"></div></div>
-<!-- 本機維護用 data.js；公開上傳時改放加密後的 data.enc.js（見 README） -->
+<!-- 本機維護用 data.js；正式網站由 app.js 每次重新向伺服器確認 data.enc.js（避免快取看到舊行程） -->
 <script src="js/data.js"></script>
-<script src="js/data.enc.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

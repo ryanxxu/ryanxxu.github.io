@@ -24,6 +24,8 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 5. push 後用 `gh run list -R ryanxxu/ryanxxu.github.io -L 2` 確認「pages build and deployment」有對應這次 push 的新執行且 success；沒有就推一個空 commit 重新觸發。
 
 **網站內編輯器 `edit.html`**（主要編輯方式）：行程頁解鎖後，設定過 GitHub 權杖的裝置右上會出現「✎ 編輯」（`canEdit()` 看 localStorage `trip:edit:gh`；沒設定的人看不到）。編輯頁用 GitHub Contents API 讀 `travel/hokkaido-2026/js/data.enc.js`（main），在瀏覽器用行程密碼解密；按「發布」→ 重新加密 → PUT 回 main（帶 sha，409 時提示再按一次），約 1～2 分鐘 Pages 更新。發布前會再讀一次雲端：雲端在編輯期間被改過時，編輯器沒有的欄位與 `routeMap` 一律用雲端版。權杖是使用者自建的 Fine-grained token（只限 ryanxxu.github.io、Contents 讀寫），只存在使用者瀏覽器，絕不寫進 repo。分頁：每日行程（含「⇅ 拖拉排序」模式）、航班、待確認、住宿、同行・備註、Wishlist（表單＋拖拉，空白列發布時清掉）、區域（名稱、對應 Wishlist、經緯度）、基本；已沒有 JSON 欄位。Claude 改完 data.js 推上 main 後，使用者下次開編輯器就會讀到，不需要另外同步。
+編輯入口有兩個：右上「✎ 編輯」（有權杖才顯示）＋頁尾一律顯示的「✎ 編輯行程」連結（iPhone 主畫面 App 與 Safari 的 localStorage 是分開的，主畫面 App 第一次要從頁尾進去設定權杖）。
+行程頁不再用 `<script src="js/data.enc.js">`：`loadEnc()` 用 `fetch(cache:'no-cache')` 每次向伺服器確認（避開 Pages 的 max-age=600 快取），離線時退回 `force-cache`；回到頁面（visibilitychange）若伺服器版本不同就自動重新載入。
 舊的 Claude 編輯器 Artifact https://claude.ai/artifact/BAZaEjdYMgdaeyr9jgW19R （db `trip/current`）已停用，不要再從那裡套用資料（會蓋掉網站編輯器的修改）。
 - 入口頁北海道卡片連到 `travel/`（第二層），不直接進行程頁。
 - 新增旅程：放資料夾 + `travel/trips.js` 加一筆 + 入口頁 `TRAVEL` 陣列加一筆（兩處要同步）。
