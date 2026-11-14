@@ -32,6 +32,19 @@ a.tool{text-decoration:none;display:inline-flex;align-items:center}
 .nav{display:flex;justify-content:space-between;gap:4px;padding:8px 0 10px}
 .nav button{flex:1;border:0;background:#e9eff5;border-radius:99px;padding:7px 0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#3c536d;font-weight:600;transition:background .2s,color .2s}
 .nav button.on{background:var(--navy);color:#fff}
+.nico{display:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* 手機：選單固定在畫面最下面（大拇指好按）；寬螢幕維持在上方 */
+@media (max-width:640px){
+  .hd{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--snow);padding-bottom:10px}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+    padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:6px}
+  .nav button{padding:11px 0;font-size:13px}
+  .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  /* 圖示＋文字（使用者選 B） */
+  .nav{padding-top:6px}
+  .nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:14px;letter-spacing:.04em}
+  .nico{display:block}
+}
 
 /* 段落 */
 section{padding:22px 0 26px;position:relative}
