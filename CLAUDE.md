@@ -8,6 +8,7 @@ index.html                         第 1 層：入口頁 "Ryan's Space"（以使
 travel/index.html + trips.js       第 2 層：旅行清單（依開始年份分組，狀態標籤：進行中／即將出發／已結束）
 travel/hokkaido-2026/              第 3 層：行程頁（2026-11-19 ~ 11-23，札幌、小樽、美瑛富良野（D3 Klook 巴士團）、D4 札幌市區、D5 回程）
   index.html  css/style.css  js/app.js
+  edit.html        網站內編輯器（使用者自己改資料、直接發布）
   js/data.js       明文行程 window.TRIP —— .gitignore 排除，絕不上傳
   js/data.enc.js   加密資料 window.TRIP_ENC —— 上傳這個
 tools/encrypt.mjs                  node tools/encrypt.mjs <密碼≥8字> [folder]
@@ -15,13 +16,15 @@ tools/decrypt.mjs                  node tools/decrypt.mjs <密碼> [folder]（�
 ```
 
 ## 更新行程的流程（新 session 沒有 data.js）
+0. **使用者會直接用網站編輯器發布**，所以 repo 裡的 data.enc.js 才是最新版，本機 data.js 隨時可能過期：動手前一律先 `git pull origin main`，再從 data.enc.js 解密。
 1. 向使用者要密碼（密碼絕不寫進 repo）→ `node tools/decrypt.mjs <密碼>` 還原 data.js。
 2. 依使用者描述修改 data.js（欄位見 README）。
 3. `node tools/encrypt.mjs <同一組密碼>` → 確認 `git status` 沒有 data.js → commit + push main。
 4. 密碼不變，所以 `#k=` 免密碼分享連結繼續有效。
 5. push 後用 `gh run list -R ryanxxu/ryanxxu.github.io -L 2` 確認「pages build and deployment」有對應這次 push 的新執行且 success；沒有就推一個空 commit 重新觸發。
 
-**行程編輯器**（使用者自己改資料用）：私人 Artifact https://claude.ai/artifact/BAZaEjdYMgdaeyr9jgW19R ，資料在其 db `trip/current`（欄位 `json` = JSON.stringify(TRIP)、`savedAt`）。使用者說「改好了」→ ArtifactData get 該文件 → 寫成 data.js → 加密 → push。若自己改了 data.js，也要用 ArtifactData set（帶 if_version）同步回編輯器，否則下次儲存會蓋掉。
+**網站內編輯器 `edit.html`**（主要編輯方式）：行程頁解鎖後，設定過 GitHub 權杖的裝置右上會出現「✎ 編輯」（`canEdit()` 看 localStorage `trip:edit:gh`；沒設定的人看不到）。編輯頁用 GitHub Contents API 讀 `travel/hokkaido-2026/js/data.enc.js`（main），在瀏覽器用行程密碼解密；按「發布」→ 重新加密 → PUT 回 main（帶 sha，409 時提示再按一次），約 1～2 分鐘 Pages 更新。發布前會再讀一次雲端：雲端在編輯期間被改過時，編輯器沒有的欄位與 `routeMap` 一律用雲端版。權杖是使用者自建的 Fine-grained token（只限 ryanxxu.github.io、Contents 讀寫），只存在使用者瀏覽器，絕不寫進 repo。分頁：每日行程（含「⇅ 拖拉排序」模式）、航班、待確認、住宿、同行・備註、Wishlist（表單＋拖拉，空白列發布時清掉）、區域（名稱、對應 Wishlist、經緯度）、基本；已沒有 JSON 欄位。Claude 改完 data.js 推上 main 後，使用者下次開編輯器就會讀到，不需要另外同步。
+舊的 Claude 編輯器 Artifact https://claude.ai/artifact/BAZaEjdYMgdaeyr9jgW19R （db `trip/current`）已停用，不要再從那裡套用資料（會蓋掉網站編輯器的修改）。
 - 入口頁北海道卡片連到 `travel/`（第二層），不直接進行程頁。
 - 新增旅程：放資料夾 + `travel/trips.js` 加一筆 + 入口頁 `TRAVEL` 陣列加一筆（兩處要同步）。
 - 舊的 `ryanxxu/hokkaido` repo 已不用（請使用者自行刪除；本環境無法刪 repo）。
