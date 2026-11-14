@@ -289,7 +289,9 @@ document.addEventListener('pointerdown',function(e){
     for(var i=0;i<rows.length;i++){if(i<from&&myMid<mids[i])to=Math.min(to,i);if(i>from&&myMid>mids[i])to=Math.max(to,i)}
     rows.forEach(function(r,i){if(r===row)return;var sh=0;if(from<to&&i>from&&i<=to)sh=-step;if(from>to&&i>=to&&i<from)sh=step;r.style.transform=sh?'translateY('+sh+'px)':''});
   }
-  function auto(){var m=70,v=0;if(!moved){raf=requestAnimationFrame(auto);return}if(lastY<m)v=-(m-lastY)/4;else if(lastY>innerHeight-m)v=(lastY-(innerHeight-m))/4;if(v){window.scrollBy(0,v);place()}raf=requestAnimationFrame(auto)}
+  function auto(){var m=48,v=0,top=document.querySelector('header.bar').offsetHeight;if(!moved){raf=requestAnimationFrame(auto);return}
+    /* 只有往該方向拖、且靠近邊緣時才自動捲動，速度最多每格 8px */
+    if(lastY<top+m&&lastY<cy0)v=-Math.min(8,(top+m-lastY)/5);else if(lastY>innerHeight-m&&lastY>cy0)v=Math.min(8,(lastY-(innerHeight-m))/5);if(v){window.scrollBy(0,v);place()}raf=requestAnimationFrame(auto)}
   raf=requestAnimationFrame(auto);
   function mv(ev){lastY=ev.clientY;if(Math.abs(lastY-cy0)>12)moved=true;place()}
   function up(){cancelAnimationFrame(raf);document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
