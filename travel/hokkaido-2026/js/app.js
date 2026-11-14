@@ -101,6 +101,14 @@
    * 一頁式：HOME → FLIGHT → DAYS → STAY → NOTES，上方固定選單捲動到各段
    * ===================================================================== */
   var SECS = [['home', 'Home'], ['flight', 'Flight'], ['days', 'Days'], ['stay', 'Stay'], ['notes', 'Notes']];
+  /* 底部選單的小圖示（線條風，和地圖圖釘同一套筆觸） */
+  var NAVICO = {
+    home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
+    flight: '<path d="M3 14l18-7-7 16-2.5-6.5z"/><path d="M11.5 16.5L21 7"/>',
+    days: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    stay: '<path d="M3 18V7"/><path d="M3 14h18v4"/><path d="M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/>',
+    notes: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/>'
+  };
   var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   function md(ds) { return +ds.slice(5, 7) + '/' + +ds.slice(8, 10); }
@@ -325,7 +333,7 @@
   function headerHtml(T, cur) {
     return '<div class="hd-in"><div class="hd-top"><div class="cap"><a class="home" href="../" aria-label="回旅行清單"><span class="ar">←</span>TRAVEL</a></div>' +
       '<div class="tools">' + (canEdit() ? '<a class="tool" href="edit.html" aria-label="編輯行程">✎ 編輯</a>' : '') + '<button class="tool" data-act="fx">¥ 匯率</button><button class="tool" data-act="split">$ 分帳</button></div></div>' +
-      '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</nav></div>';
+      '<nav class="nav" id="tabs">' + SECS.map(function (s) { return '<button class="' + (s[0] === cur ? 'on' : '') + '" data-go="' + s[0] + '"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true">' + NAVICO[s[0]] + '</svg><span>' + s[1] + '</span></button>'; }).join('') + '</nav></div>';
   }
   function pageHtml(T, ctx) {
     return '<section id="s-home">' + homeHtml(T, ctx) + '</section>' +
