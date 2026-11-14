@@ -251,7 +251,7 @@ document.addEventListener('click',function(e){
   if(b.dataset.wg!=null){wishG=b.dataset.wg;render(true);return}
   if(handleWish(b))return;
   var a=b.dataset.act,j=+b.dataset.j,items=T&&T.days[dayIx]&&T.days[dayIx].items;
-  if(a==='sortMode'){sortMode=!sortMode;render(true);var L=document.querySelector(sortMode?'.dlist':'.item');if(L){var hh=document.querySelector('header.bar').offsetHeight;window.scrollTo(0,L.getBoundingClientRect().top+window.scrollY-hh-(sortMode?70:60))}return}
+  if(a==='sortMode'){sortMode=!sortMode;render(true);var L=document.querySelector(sortMode?'.dlist':'.item');if(L){var hh=document.querySelector('header.bar').offsetHeight;window.scrollTo(0,L.getBoundingClientRect().top+window.scrollY-hh-(sortMode?150:60))}return}
   if(a==='addItem'){(T.days[dayIx].items=items||[]).push({time:'',cat:'sight',title:'',status:'confirmed'});render(true);var ins=document.querySelectorAll('.item input[data-k$=".title"]');if(ins.length)ins[ins.length-1].focus();}
   else if(a==='sortItems'){items.sort(function(x,y){return(x.time||'')<(y.time||'')?-1:(x.time||'')>(y.time||'')?1:0});render(true)}
   else if(a==='up'&&j>0){items.splice(j-1,0,items.splice(j,1)[0]);render(true)}
